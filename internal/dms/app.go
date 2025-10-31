@@ -192,6 +192,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+	case shellStartedMsg:
+		m.menuItems = m.buildMenuItems()
+		if m.selectedItem >= len(m.menuItems) {
+			m.selectedItem = len(m.menuItems) - 1
+		}
+		return m, nil
 	case updateProgressMsg:
 		m.updateProgress = msg
 		if msg.logOutput != "" {
