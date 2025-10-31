@@ -175,7 +175,10 @@ func (m *Model) buildPluginsMenuItems() []MenuItem {
 }
 
 func (m *Model) isShellRunning() bool {
-	cmd := exec.Command("pgrep", "-f", "qs -c dms")
+	// Check for both -c and -p flag patterns since quickshell can be started either way
+	// -c dms: config name mode
+	// -p <path>/dms: path mode (used when installed via system packages)
+	cmd := exec.Command("pgrep", "-f", "qs.*dms")
 	err := cmd.Run()
 	return err == nil
 }
