@@ -272,8 +272,7 @@ curl -fsSL https://install.danklinux.com | sh
 - `dev-qt/qtbase`: wayland opengl vulkan widgets
 - `dev-qt/qtdeclarative`: opengl vulkan
 - `media-libs/mesa`: opengl vulkan
-- `dev-libs/wlroots`: X
-- `gui-apps/quickshell`: -breakpad jemalloc sockets wayland layer-shell session-lock toplevel-management screencopy X pipewire tray mpris pam hyprland hyprland-global-shortcuts hyprland-focus-grab i3 i3-ipc bluetooth
+- `gui-apps/quickshell`: breakpad jemalloc sockets wayland layer-shell session-lock toplevel-management screencopy X pipewire tray mpris pam hyprland hyprland-global-shortcuts hyprland-focus-grab i3 i3-ipc bluetooth
 
 ### NixOS (Not supported by Dank Linux, but with Flake)
 
