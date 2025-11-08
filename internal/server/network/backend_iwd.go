@@ -147,7 +147,17 @@ func (b *IWDBackend) GetCurrentState() (*BackendState, error) {
 }
 
 func (b *IWDBackend) OnUserCanceledPrompt() {
+	b.stateMutex.RLock()
+	cancelledSSID := b.state.ConnectingSSID
+	b.stateMutex.RUnlock()
+
 	b.setConnectError("user-canceled")
+
+	if cancelledSSID != "" {
+		if err := b.ForgetWiFiNetwork(cancelledSSID); err != nil {
+		}
+	}
+
 	if b.onStateChange != nil {
 		b.onStateChange()
 	}

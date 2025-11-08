@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/AvengeMedia/danklinux/internal/distros"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -27,30 +28,7 @@ func (m Model) viewGentooUseFlags() string {
 	b.WriteString(info)
 	b.WriteString("\n\n")
 
-	useFlags := []string{
-		"wayland",
-		"vulkan",
-		"opengl",
-		"accessibility",
-		"policykit",
-		"X",
-		"udev",
-		"alsa",
-		"gdbm",
-		"qml",
-		"gtk",
-		"qt6",
-		"jpeg",
-		"webp",
-		"png",
-		"gif",
-		"tiff",
-		"brotli",
-		"dbus",
-		"svg",
-	}
-
-	for _, flag := range useFlags {
+	for _, flag := range distros.GentooGlobalUseFlags {
 		flagLine := m.styles.Success.Render(fmt.Sprintf("  • %s", flag))
 		b.WriteString(flagLine)
 		b.WriteString("\n")
@@ -89,20 +67,17 @@ func (m Model) updateGentooUseFlagsState(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) setGentooGlobalUseFlags() tea.Cmd {
 	return func() tea.Msg {
-		useFlags := "wayland vulkan opengl accessibility policykit X"
+		useFlagsStr := strings.Join(distros.GentooGlobalUseFlags, " ")
 
-		// Check if USE line already exists
 		checkCmd := exec.CommandContext(context.Background(), "grep", "-q", "^USE=", "/etc/portage/make.conf")
 		hasUse := checkCmd.Run() == nil
 
 		var cmd *exec.Cmd
 		if hasUse {
-			// Append to existing USE flags
-			cmdStr := fmt.Sprintf("echo '%s' | sudo -S sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf", m.sudoPassword, useFlags)
+			cmdStr := fmt.Sprintf("echo '%s' | sudo -S sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf", m.sudoPassword, useFlagsStr)
 			cmd = exec.CommandContext(context.Background(), "bash", "-c", cmdStr)
 		} else {
-			// Add new USE line
-			cmdStr := fmt.Sprintf("echo '%s' | sudo -S bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"", m.sudoPassword, useFlags)
+			cmdStr := fmt.Sprintf("echo '%s' | sudo -S bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"", m.sudoPassword, useFlagsStr)
 			cmd = exec.CommandContext(context.Background(), "bash", "-c", cmdStr)
 		}
 

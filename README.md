@@ -263,12 +263,16 @@ curl -fsSL https://install.danklinux.com | sh
 | DankMaterialShell | Manual | Git clone to `~/.config/quickshell/dms` |
 
 **Global USE Flags:**
-`wayland vulkan opengl accessibility policykit X udev alsa gdbm qml gtk qt6 jpeg webp png gif tiff brotli dbus svg`
+`X dbus udev alsa policykit jpeg png webp gif tiff svg brotli gdbm accessibility gtk qt6`
 
 **Package-Specific USE Flags:**
 - `sys-apps/xdg-desktop-portal-gtk`: wayland X
 - `gui-wm/niri`: dbus screencast
 - `gui-wm/hyprland`: X
+- `dev-qt/qtbase`: wayland opengl vulkan widgets
+- `dev-qt/qtdeclarative`: opengl vulkan
+- `media-libs/mesa`: opengl vulkan
+- `dev-libs/wlroots`: X
 - `gui-apps/quickshell`: -breakpad jemalloc sockets wayland layer-shell session-lock toplevel-management screencopy X pipewire tray mpris pam hyprland hyprland-global-shortcuts hyprland-focus-grab i3 i3-ipc bluetooth
 
 ### NixOS (Not supported by Dank Linux, but with Flake)

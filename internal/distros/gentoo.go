@@ -10,6 +10,25 @@ import (
 	"github.com/AvengeMedia/danklinux/internal/deps"
 )
 
+var GentooGlobalUseFlags = []string{
+	"X",
+	"dbus",
+	"udev",
+	"alsa",
+	"policykit",
+	"jpeg",
+	"png",
+	"webp",
+	"gif",
+	"tiff",
+	"svg",
+	"brotli",
+	"gdbm",
+	"accessibility",
+	"gtk",
+	"qt6",
+}
+
 func init() {
 	Register("gentoo", "#54487A", FamilyGentoo, func(config DistroConfig, logChan chan<- string) Distribution {
 		return NewGentooDistribution(config, logChan)
@@ -171,6 +190,12 @@ func (g *GentooDistribution) GetPackageMappingWithVariants(wm deps.WindowManager
 		"accountsservice":        {Name: "sys-apps/accountsservice", Repository: RepoTypeSystem},
 		"hyprpicker":             g.getHyprpickerMapping(variants["hyprland"]),
 
+		"qtbase":        {Name: "dev-qt/qtbase", Repository: RepoTypeSystem, UseFlags: "wayland opengl vulkan widgets"},
+		"qtdeclarative": {Name: "dev-qt/qtdeclarative", Repository: RepoTypeSystem, UseFlags: "opengl vulkan"},
+		"qtwayland":     {Name: "dev-qt/qtwayland", Repository: RepoTypeSystem},
+		"mesa":          {Name: "media-libs/mesa", Repository: RepoTypeSystem, UseFlags: "opengl vulkan"},
+		"wlroots":       {Name: "dev-libs/wlroots", Repository: RepoTypeSystem, UseFlags: "X"},
+
 		"quickshell":              g.getQuickshellMapping(variants["quickshell"]),
 		"matugen":                 {Name: "x11-misc/matugen", Repository: RepoTypeGURU, AcceptKeywords: archKeyword},
 		"cliphist":                {Name: "app-misc/cliphist", Repository: RepoTypeGURU, AcceptKeywords: archKeyword},
@@ -225,14 +250,12 @@ func (g *GentooDistribution) getPrerequisites() []string {
 		"dev-build/make",
 		"app-arch/unzip",
 		"dev-util/pkgconf",
-		"dev-qt/qtbase",
 		"dev-qt/qtdeclarative",
-		"dev-qt/qtwayland",
 	}
 }
 
 func (g *GentooDistribution) setGlobalUseFlags(ctx context.Context, sudoPassword string) error {
-	useFlags := "wayland vulkan opengl accessibility policykit X udev alsa gdbm qml gtk qt6 jpeg webp png gif tiff brotli dbus svg"
+	useFlags := strings.Join(GentooGlobalUseFlags, " ")
 
 	checkCmd := exec.CommandContext(ctx, "grep", "-q", "^USE=", "/etc/portage/make.conf")
 	hasUse := checkCmd.Run() == nil
