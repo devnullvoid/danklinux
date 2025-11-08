@@ -27,6 +27,8 @@ var GentooGlobalUseFlags = []string{
 	"accessibility",
 	"gtk",
 	"qt6",
+	"egl",
+	"gbm",
 }
 
 func init() {

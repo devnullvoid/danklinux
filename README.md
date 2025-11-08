@@ -263,7 +263,7 @@ curl -fsSL https://install.danklinux.com | sh
 | DankMaterialShell | Manual | Git clone to `~/.config/quickshell/dms` |
 
 **Global USE Flags:**
-`X dbus udev alsa policykit jpeg png webp gif tiff svg brotli gdbm accessibility gtk qt6`
+`X dbus udev alsa policykit jpeg png webp gif tiff svg brotli gdbm accessibility gtk qt6 egl gbm`
 
 **Package-Specific USE Flags:**
 - `sys-apps/xdg-desktop-portal-gtk`: wayland X

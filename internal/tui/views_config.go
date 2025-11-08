@@ -115,13 +115,24 @@ func (m Model) deployConfigurations() tea.Cmd {
 
 		// Determine the selected terminal
 		var terminal deps.Terminal
-		switch m.selectedTerminal {
-		case 0:
-			terminal = deps.TerminalGhostty
-		case 1:
-			terminal = deps.TerminalKitty
-		default:
-			terminal = deps.TerminalGhostty
+		if m.osInfo != nil && m.osInfo.Distribution.ID == "gentoo" {
+			switch m.selectedTerminal {
+			case 0:
+				terminal = deps.TerminalKitty
+			case 1:
+				terminal = deps.TerminalAlacritty
+			default:
+				terminal = deps.TerminalKitty
+			}
+		} else {
+			switch m.selectedTerminal {
+			case 0:
+				terminal = deps.TerminalGhostty
+			case 1:
+				terminal = deps.TerminalKitty
+			default:
+				terminal = deps.TerminalAlacritty
+			}
 		}
 
 		deployer := config.NewConfigDeployer(m.logChan)
@@ -301,28 +312,65 @@ func (m Model) checkExistingConfigurations() tea.Cmd {
 			})
 		}
 
-		if m.selectedTerminal == 0 {
-			ghosttyPath := filepath.Join(os.Getenv("HOME"), ".config", "ghostty", "config")
-			ghosttyExists := false
-			if _, err := os.Stat(ghosttyPath); err == nil {
-				ghosttyExists = true
+		if m.osInfo != nil && m.osInfo.Distribution.ID == "gentoo" {
+			if m.selectedTerminal == 0 {
+				kittyPath := filepath.Join(os.Getenv("HOME"), ".config", "kitty", "kitty.conf")
+				kittyExists := false
+				if _, err := os.Stat(kittyPath); err == nil {
+					kittyExists = true
+				}
+				configs = append(configs, ExistingConfigInfo{
+					ConfigType: "Kitty",
+					Path:       kittyPath,
+					Exists:     kittyExists,
+				})
+			} else {
+				alacrittyPath := filepath.Join(os.Getenv("HOME"), ".config", "alacritty", "alacritty.toml")
+				alacrittyExists := false
+				if _, err := os.Stat(alacrittyPath); err == nil {
+					alacrittyExists = true
+				}
+				configs = append(configs, ExistingConfigInfo{
+					ConfigType: "Alacritty",
+					Path:       alacrittyPath,
+					Exists:     alacrittyExists,
+				})
 			}
-			configs = append(configs, ExistingConfigInfo{
-				ConfigType: "Ghostty",
-				Path:       ghosttyPath,
-				Exists:     ghosttyExists,
-			})
 		} else {
-			kittyPath := filepath.Join(os.Getenv("HOME"), ".config", "kitty", "kitty.conf")
-			kittyExists := false
-			if _, err := os.Stat(kittyPath); err == nil {
-				kittyExists = true
+			if m.selectedTerminal == 0 {
+				ghosttyPath := filepath.Join(os.Getenv("HOME"), ".config", "ghostty", "config")
+				ghosttyExists := false
+				if _, err := os.Stat(ghosttyPath); err == nil {
+					ghosttyExists = true
+				}
+				configs = append(configs, ExistingConfigInfo{
+					ConfigType: "Ghostty",
+					Path:       ghosttyPath,
+					Exists:     ghosttyExists,
+				})
+			} else if m.selectedTerminal == 1 {
+				kittyPath := filepath.Join(os.Getenv("HOME"), ".config", "kitty", "kitty.conf")
+				kittyExists := false
+				if _, err := os.Stat(kittyPath); err == nil {
+					kittyExists = true
+				}
+				configs = append(configs, ExistingConfigInfo{
+					ConfigType: "Kitty",
+					Path:       kittyPath,
+					Exists:     kittyExists,
+				})
+			} else {
+				alacrittyPath := filepath.Join(os.Getenv("HOME"), ".config", "alacritty", "alacritty.toml")
+				alacrittyExists := false
+				if _, err := os.Stat(alacrittyPath); err == nil {
+					alacrittyExists = true
+				}
+				configs = append(configs, ExistingConfigInfo{
+					ConfigType: "Alacritty",
+					Path:       alacrittyPath,
+					Exists:     alacrittyExists,
+				})
 			}
-			configs = append(configs, ExistingConfigInfo{
-				ConfigType: "Kitty",
-				Path:       kittyPath,
-				Exists:     kittyExists,
-			})
 		}
 
 		return configCheckResult{
