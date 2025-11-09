@@ -35,6 +35,8 @@ var keybindsShowCmd = &cobra.Command{
 
 func init() {
 	keybindsShowCmd.Flags().String("hyprland-path", "$HOME/.config/hypr", "Path to Hyprland config directory")
+	keybindsShowCmd.Flags().String("mangowc-path", "$HOME/.config/mango", "Path to MangoWC config directory")
+	keybindsShowCmd.Flags().String("sway-path", "$HOME/.config/sway", "Path to Sway config directory")
 
 	keybindsCmd.AddCommand(keybindsListCmd)
 	keybindsCmd.AddCommand(keybindsShowCmd)
@@ -52,6 +54,16 @@ func initializeProviders() {
 	hyprlandProvider := providers.NewHyprlandProvider("$HOME/.config/hypr")
 	if err := registry.Register(hyprlandProvider); err != nil {
 		log.Warnf("Failed to register Hyprland provider: %v", err)
+	}
+
+	mangowcProvider := providers.NewMangoWCProvider("$HOME/.config/mango")
+	if err := registry.Register(mangowcProvider); err != nil {
+		log.Warnf("Failed to register MangoWC provider: %v", err)
+	}
+
+	swayProvider := providers.NewSwayProvider("$HOME/.config/sway")
+	if err := registry.Register(swayProvider); err != nil {
+		log.Warnf("Failed to register Sway provider: %v", err)
 	}
 
 	config := keybinds.DefaultDiscoveryConfig()
@@ -84,6 +96,18 @@ func runKeybindsShow(cmd *cobra.Command, args []string) {
 		hyprlandPath, _ := cmd.Flags().GetString("hyprland-path")
 		hyprlandProvider := providers.NewHyprlandProvider(hyprlandPath)
 		registry.Register(hyprlandProvider)
+	}
+
+	if providerName == "mangowc" {
+		mangowcPath, _ := cmd.Flags().GetString("mangowc-path")
+		mangowcProvider := providers.NewMangoWCProvider(mangowcPath)
+		registry.Register(mangowcProvider)
+	}
+
+	if providerName == "sway" {
+		swayPath, _ := cmd.Flags().GetString("sway-path")
+		swayProvider := providers.NewSwayProvider(swayPath)
+		registry.Register(swayProvider)
 	}
 
 	provider, err := registry.Get(providerName)
