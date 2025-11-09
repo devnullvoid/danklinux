@@ -364,7 +364,7 @@ func getCommonCommands() []*cobra.Command {
 		pluginsCmd,
 		dank16Cmd,
 		brightnessCmd,
-		hyprlandCmd,
+		keybindsCmd,
 		greeterCmd,
 	}
 }

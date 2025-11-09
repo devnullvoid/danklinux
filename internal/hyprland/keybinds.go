@@ -103,12 +103,12 @@ func autogenerateComment(dispatcher, params string) string {
 			"d": "down",
 		}
 		if dir, ok := dirMap[params]; ok {
-			return "Window: move in " + dir + " direction"
+			return "move in " + dir + " direction"
 		}
-		return "Window: move in null direction"
+		return "move in null direction"
 
 	case "pin":
-		return "Window: pin (show on all workspaces)"
+		return "pin (show on all workspaces)"
 
 	case "splitratio":
 		return "Window split ratio " + params
@@ -137,13 +137,13 @@ func autogenerateComment(dispatcher, params string) string {
 		return "Toggle fake fullscreen"
 
 	case "workspace":
-		if params == "+1" {
-			return "Workspace: focus right"
-		} else if params == "-1" {
-			return "Workspace: focus left"
+		switch params {
+		case "+1":
+			return "focus right"
+		case "-1":
+			return "focus left"
 		}
-		return "Focus workspace " + params
-
+		return "focus workspace " + params
 	case "movefocus":
 		dirMap := map[string]string{
 			"l": "left",
@@ -152,9 +152,9 @@ func autogenerateComment(dispatcher, params string) string {
 			"d": "down",
 		}
 		if dir, ok := dirMap[params]; ok {
-			return "Window: move focus " + dir
+			return "move focus " + dir
 		}
-		return "Window: move focus null"
+		return "move focus null"
 
 	case "swapwindow":
 		dirMap := map[string]string{
@@ -164,31 +164,32 @@ func autogenerateComment(dispatcher, params string) string {
 			"d": "down",
 		}
 		if dir, ok := dirMap[params]; ok {
-			return "Window: swap in " + dir + " direction"
+			return "swap in " + dir + " direction"
 		}
-		return "Window: swap in null direction"
+		return "swap in null direction"
 
 	case "movetoworkspace":
-		if params == "+1" {
-			return "Window: move to right workspace (non-silent)"
-		} else if params == "-1" {
-			return "Window: move to left workspace (non-silent)"
+		switch params {
+		case "+1":
+			return "move to right workspace (non-silent)"
+		case "-1":
+			return "move to left workspace (non-silent)"
 		}
-		return "Window: move to workspace " + params + " (non-silent)"
-
+		return "move to workspace " + params + " (non-silent)"
 	case "movetoworkspacesilent":
-		if params == "+1" {
-			return "Window: move to right workspace"
-		} else if params == "-1" {
-			return "Window: move to right workspace"
+		switch params {
+		case "+1":
+			return "move to right workspace"
+		case "-1":
+			return "move to right workspace"
 		}
-		return "Window: move to workspace " + params
+		return "move to workspace " + params
 
 	case "togglespecialworkspace":
-		return "Workspace: toggle special"
+		return "toggle special"
 
 	case "exec":
-		return "Execute: " + params
+		return params
 
 	default:
 		return ""
