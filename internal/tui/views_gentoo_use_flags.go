@@ -92,11 +92,11 @@ func (m Model) setGentooGlobalUseFlags() tea.Cmd {
 
 		var cmd *exec.Cmd
 		if hasUse {
-			cmdStr := fmt.Sprintf("echo '%s' | sudo -S sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf", m.sudoPassword, useFlagsStr)
-			cmd = exec.CommandContext(context.Background(), "bash", "-c", cmdStr)
+			cmd = distros.ExecSudoCommand(context.Background(), m.sudoPassword,
+				fmt.Sprintf("sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf", useFlagsStr))
 		} else {
-			cmdStr := fmt.Sprintf("echo '%s' | sudo -S bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"", m.sudoPassword, useFlagsStr)
-			cmd = exec.CommandContext(context.Background(), "bash", "-c", cmdStr)
+			cmd = distros.ExecSudoCommand(context.Background(), m.sudoPassword,
+				fmt.Sprintf("bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"", useFlagsStr))
 		}
 
 		err := cmd.Run()

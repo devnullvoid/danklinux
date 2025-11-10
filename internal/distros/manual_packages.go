@@ -153,7 +153,7 @@ func (m *ManualPackageInstaller) installDgop(ctx context.Context, sudoPassword s
 		CommandInfo: "sudo make install",
 	}
 
-	installCmd := exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("echo '%s' | sudo -S make install", sudoPassword))
+	installCmd := execSudoCommand(ctx, sudoPassword, "make install")
 	installCmd.Dir = tmpDir
 	if err := installCmd.Run(); err != nil {
 		m.logError("failed to install dgop", err)
@@ -207,8 +207,8 @@ func (m *ManualPackageInstaller) installGrimblast(ctx context.Context, sudoPassw
 		CommandInfo: "sudo cp grimblast /usr/local/bin/",
 	}
 
-	installCmd := exec.CommandContext(ctx, "bash", "-c",
-		fmt.Sprintf("echo '%s' | sudo -S cp %s /usr/local/bin/grimblast", sudoPassword, tmpPath))
+	installCmd := execSudoCommand(ctx, sudoPassword,
+		fmt.Sprintf("cp %s /usr/local/bin/grimblast", tmpPath))
 	if err := installCmd.Run(); err != nil {
 		m.logError("failed to install grimblast", err)
 		return fmt.Errorf("failed to install grimblast: %w", err)
@@ -279,8 +279,8 @@ func (m *ManualPackageInstaller) installNiri(ctx context.Context, sudoPassword s
 		CommandInfo: "dpkg -i niri.deb",
 	}
 
-	installDebCmd := exec.CommandContext(ctx, "bash", "-c",
-		fmt.Sprintf("echo '%s' | sudo -S dpkg -i %s/target/debian/niri_*.deb", sudoPassword, buildDir))
+	installDebCmd := execSudoCommand(ctx, sudoPassword,
+		fmt.Sprintf("dpkg -i %s/target/debian/niri_*.deb", buildDir))
 
 	output, err := installDebCmd.CombinedOutput()
 	if err != nil {
@@ -391,8 +391,8 @@ func (m *ManualPackageInstaller) installQuickshell(ctx context.Context, sudoPass
 		CommandInfo: "sudo cmake --install build",
 	}
 
-	installCmd := exec.CommandContext(ctx, "bash", "-c",
-		fmt.Sprintf("cd %s && echo '%s' | sudo -S cmake --install build", tmpDir, sudoPassword))
+	installCmd := execSudoCommand(ctx, sudoPassword,
+		fmt.Sprintf("cd %s && cmake --install build", tmpDir))
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("failed to install quickshell: %w", err)
 	}
@@ -454,8 +454,8 @@ func (m *ManualPackageInstaller) installHyprland(ctx context.Context, sudoPasswo
 		CommandInfo: "sudo make install",
 	}
 
-	installCmd := exec.CommandContext(ctx, "bash", "-c",
-		fmt.Sprintf("cd %s && echo '%s' | sudo -S make install", tmpDir, sudoPassword))
+	installCmd := execSudoCommand(ctx, sudoPassword,
+		fmt.Sprintf("cd %s && make install", tmpDir))
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("failed to install Hyprland: %w", err)
 	}
@@ -520,8 +520,8 @@ func (m *ManualPackageInstaller) installHyprpicker(ctx context.Context, sudoPass
 		CommandInfo: "sudo make install",
 	}
 
-	installCmd := exec.CommandContext(ctx, "bash", "-c",
-		fmt.Sprintf("cd %s && echo '%s' | sudo -S make install", tmpDir, sudoPassword))
+	installCmd := execSudoCommand(ctx, sudoPassword,
+		fmt.Sprintf("cd %s && make install", tmpDir))
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("failed to install hyprpicker: %w", err)
 	}
@@ -586,8 +586,8 @@ func (m *ManualPackageInstaller) installGhostty(ctx context.Context, sudoPasswor
 		CommandInfo: "sudo cp zig-out/bin/ghostty /usr/local/bin/",
 	}
 
-	installCmd := exec.CommandContext(ctx, "bash", "-c",
-		fmt.Sprintf("echo '%s' | sudo -S cp %s/zig-out/bin/ghostty /usr/local/bin/", sudoPassword, tmpDir))
+	installCmd := execSudoCommand(ctx, sudoPassword,
+		fmt.Sprintf("cp %s/zig-out/bin/ghostty /usr/local/bin/", tmpDir))
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("failed to install Ghostty: %w", err)
 	}

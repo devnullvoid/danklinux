@@ -85,40 +85,40 @@ func EnsureGreetdInstalled(logFunc func(string), sudoPassword string) error {
 	switch config.Family {
 	case distros.FamilyArch:
 		if sudoPassword != "" {
-			installCmd = exec.CommandContext(ctx, "bash", "-c",
-				fmt.Sprintf("echo '%s' | sudo -S pacman -S --needed --noconfirm greetd", sudoPassword))
+			installCmd = distros.ExecSudoCommand(ctx, sudoPassword,
+				"pacman -S --needed --noconfirm greetd")
 		} else {
 			installCmd = exec.CommandContext(ctx, "sudo", "pacman", "-S", "--needed", "--noconfirm", "greetd")
 		}
 
 	case distros.FamilyFedora:
 		if sudoPassword != "" {
-			installCmd = exec.CommandContext(ctx, "bash", "-c",
-				fmt.Sprintf("echo '%s' | sudo -S dnf install -y greetd", sudoPassword))
+			installCmd = distros.ExecSudoCommand(ctx, sudoPassword,
+				"dnf install -y greetd")
 		} else {
 			installCmd = exec.CommandContext(ctx, "sudo", "dnf", "install", "-y", "greetd")
 		}
 
 	case distros.FamilySUSE:
 		if sudoPassword != "" {
-			installCmd = exec.CommandContext(ctx, "bash", "-c",
-				fmt.Sprintf("echo '%s' | sudo -S zypper install -y greetd", sudoPassword))
+			installCmd = distros.ExecSudoCommand(ctx, sudoPassword,
+				"zypper install -y greetd")
 		} else {
 			installCmd = exec.CommandContext(ctx, "sudo", "zypper", "install", "-y", "greetd")
 		}
 
 	case distros.FamilyUbuntu:
 		if sudoPassword != "" {
-			installCmd = exec.CommandContext(ctx, "bash", "-c",
-				fmt.Sprintf("echo '%s' | sudo -S apt-get install -y greetd", sudoPassword))
+			installCmd = distros.ExecSudoCommand(ctx, sudoPassword,
+				"apt-get install -y greetd")
 		} else {
 			installCmd = exec.CommandContext(ctx, "sudo", "apt-get", "install", "-y", "greetd")
 		}
 
 	case distros.FamilyDebian:
 		if sudoPassword != "" {
-			installCmd = exec.CommandContext(ctx, "bash", "-c",
-				fmt.Sprintf("echo '%s' | sudo -S apt-get install -y greetd", sudoPassword))
+			installCmd = distros.ExecSudoCommand(ctx, sudoPassword,
+				"apt-get install -y greetd")
 		} else {
 			installCmd = exec.CommandContext(ctx, "sudo", "apt-get", "install", "-y", "greetd")
 		}
@@ -474,7 +474,7 @@ func runSudoCmd(sudoPassword string, command string, args ...string) error {
 		}
 		cmdStr := strings.Join(quotedArgs, " ")
 
-		cmd = exec.Command("bash", "-c", fmt.Sprintf("echo '%s' | sudo -S %s", sudoPassword, cmdStr))
+		cmd = distros.ExecSudoCommand(context.Background(), sudoPassword, cmdStr)
 	} else {
 		cmd = exec.Command("sudo", append([]string{command}, args...)...)
 	}
