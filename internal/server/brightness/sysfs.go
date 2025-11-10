@@ -217,7 +217,7 @@ func (b *SysfsBackend) PercentToValueWithExponent(percent int, dev *sysfsDevice,
 	var value int
 
 	if exponential {
-		normalizedPercent := float64(percent) / 100.0
+		normalizedPercent := float64(percent-1) / 99.0
 		hardwarePercent := math.Pow(normalizedPercent, exponent)
 		value = dev.minValue + int(math.Round(hardwarePercent*float64(usableRange)))
 	} else {
@@ -256,9 +256,9 @@ func (b *SysfsBackend) ValueToPercentWithExponent(value int, dev *sysfsDevice, e
 	if exponential {
 		hardwarePercent := float64(value-dev.minValue) / float64(usableRange)
 		normalizedPercent := math.Pow(hardwarePercent, 1.0/exponent)
-		percent = int(math.Round(normalizedPercent * 100.0))
+		percent = 1 + int(math.Round(normalizedPercent*99.0))
 	} else {
-		percent = 1 + ((value - dev.minValue) * 99 / usableRange)
+		percent = 1 + int(math.Round(float64(value-dev.minValue)*99.0/float64(usableRange)))
 	}
 
 	if percent > 100 {
