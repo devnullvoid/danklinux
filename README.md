@@ -24,6 +24,7 @@ A monorepo for dankinstall and dms (cli+go backend), a modern desktop suite for 
     - wlr-gamma-control-unstable-v1 (for night mode/gamma control)
     - dwl-ipc-unstable-v2 (for dwl/MangoWC integration)
     - ext-workspace-v1 (for workspace integrations)
+    - wlr-output-management-unstable-v1
   - Exposes a json API over unix socket for interaction with these interfaces
   - Provides plugin management APIs for the shell
   - CUPS integration for printer management
@@ -57,6 +58,8 @@ A part of the DankMaterialShell, that is provided by this repository. It is writ
     - For dwl (tested with MangoWC) integration
   - Implements ext-workspace-v1
     - Generic interface for workspaces.
+  - Implements wlr-output-management-unstable-v1
+    - Generic actions and information relevant to monitors/outputs
 
 *run `dms debug-srv` to run the socket service in standalone mode, and see a list of available APIs*
 

@@ -25,9 +25,10 @@ import (
 	"github.com/AvengeMedia/danklinux/internal/server/network"
 	"github.com/AvengeMedia/danklinux/internal/server/wayland"
 	"github.com/AvengeMedia/danklinux/internal/server/wlcontext"
+	"github.com/AvengeMedia/danklinux/internal/server/wlroutput"
 )
 
-const APIVersion = 16
+const APIVersion = 17
 
 type Capabilities struct {
 	Capabilities []string `json:"capabilities"`
@@ -52,6 +53,7 @@ var cupsManager *cups.Manager
 var dwlManager *dwl.Manager
 var extWorkspaceManager *extworkspace.Manager
 var brightnessManager *brightness.Manager
+var wlrOutputManager *wlroutput.Manager
 var wlContext *wlcontext.SharedContext
 
 var capabilitySubscribers = make(map[string]chan ServerInfo)
@@ -266,6 +268,30 @@ func InitializeExtWorkspaceManager() error {
 	return nil
 }
 
+func InitializeWlrOutputManager() error {
+	log.Info("Attempting to initialize WlrOutput management...")
+
+	if wlContext == nil {
+		ctx, err := wlcontext.New()
+		if err != nil {
+			log.Errorf("Failed to create shared Wayland context: %v", err)
+			return err
+		}
+		wlContext = ctx
+	}
+
+	manager, err := wlroutput.NewManager(wlContext.Display())
+	if err != nil {
+		log.Debug("Failed to initialize wlroutput manager: %v", err)
+		return err
+	}
+
+	wlrOutputManager = manager
+
+	log.Info("WlrOutput management initialized successfully")
+	return nil
+}
+
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
@@ -328,6 +354,10 @@ func getCapabilities() Capabilities {
 		caps = append(caps, "brightness")
 	}
 
+	if wlrOutputManager != nil {
+		caps = append(caps, "wlroutput")
+	}
+
 	return Capabilities{Capabilities: caps}
 }
 
@@ -368,6 +398,10 @@ func getServerInfo() ServerInfo {
 
 	if brightnessManager != nil {
 		caps = append(caps, "brightness")
+	}
+
+	if wlrOutputManager != nil {
+		caps = append(caps, "wlroutput")
 	}
 
 	return ServerInfo{
@@ -852,6 +886,38 @@ func handleSubscribe(conn net.Conn, req models.Request) {
 		}()
 	}
 
+	if shouldSubscribe("wlroutput") && wlrOutputManager != nil {
+		wg.Add(1)
+		wlrOutputChan := wlrOutputManager.Subscribe(clientID + "-wlroutput")
+		go func() {
+			defer wg.Done()
+			defer wlrOutputManager.Unsubscribe(clientID + "-wlroutput")
+
+			initialState := wlrOutputManager.GetState()
+			select {
+			case eventChan <- ServiceEvent{Service: "wlroutput", Data: initialState}:
+			case <-stopChan:
+				return
+			}
+
+			for {
+				select {
+				case state, ok := <-wlrOutputChan:
+					if !ok {
+						return
+					}
+					select {
+					case eventChan <- ServiceEvent{Service: "wlroutput", Data: state}:
+					case <-stopChan:
+						return
+					}
+				case <-stopChan:
+					return
+				}
+			}
+		}()
+	}
+
 	go func() {
 		wg.Wait()
 		close(eventChan)
@@ -904,6 +970,9 @@ func cleanupManagers() {
 	}
 	if brightnessManager != nil {
 		brightnessManager.Close()
+	}
+	if wlrOutputManager != nil {
+		wlrOutputManager.Close()
 	}
 	if wlContext != nil {
 		wlContext.Close()
@@ -1039,6 +1108,20 @@ func Start(printDocs bool) error {
 		log.Info("   Subscription events:")
 		log.Info("     - brightness       : Full device list (on rescan, DDC discovery, device changes)")
 		log.Info("     - brightness.update: Single device update (on brightness change for efficiency)")
+		log.Info("WlrOutput:")
+		log.Info(" wlroutput.getState                    - Get current output configuration state")
+		log.Info(" wlroutput.applyConfiguration          - Apply output configuration (params: heads)")
+		log.Info(" wlroutput.testConfiguration           - Test output configuration without applying (params: heads)")
+		log.Info(" wlroutput.subscribe                   - Subscribe to output state changes (streaming)")
+		log.Info("   Head configuration params:")
+		log.Info("     - name         : Output name (required)")
+		log.Info("     - enabled      : Enable/disable output (required)")
+		log.Info("     - modeId       : Mode ID from available modes (optional)")
+		log.Info("     - customMode   : Custom mode {width, height, refresh} (optional)")
+		log.Info("     - position     : Position {x, y} (optional)")
+		log.Info("     - transform    : Transform value (optional)")
+		log.Info("     - scale        : Scale value (optional)")
+		log.Info("     - adaptiveSync : Adaptive sync state (optional)")
 		log.Info("")
 	}
 	log.Info("Initializing managers...")
@@ -1102,6 +1185,10 @@ func Start(printDocs bool) error {
 
 	if err := InitializeExtWorkspaceManager(); err != nil {
 		log.Debugf("ExtWorkspace manager unavailable: %v", err)
+	}
+
+	if err := InitializeWlrOutputManager(); err != nil {
+		log.Debugf("WlrOutput manager unavailable: %v", err)
 	}
 
 	go func() {

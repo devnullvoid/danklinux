@@ -16,6 +16,7 @@ import (
 	"github.com/AvengeMedia/danklinux/internal/server/network"
 	serverPlugins "github.com/AvengeMedia/danklinux/internal/server/plugins"
 	"github.com/AvengeMedia/danklinux/internal/server/wayland"
+	"github.com/AvengeMedia/danklinux/internal/server/wlroutput"
 )
 
 func RouteRequest(conn net.Conn, req models.Request) {
@@ -147,6 +148,20 @@ func RouteRequest(conn net.Conn, req models.Request) {
 			Params: req.Params,
 		}
 		extworkspace.HandleRequest(conn, extWorkspaceReq, extWorkspaceManager)
+		return
+	}
+
+	if strings.HasPrefix(req.Method, "wlroutput.") {
+		if wlrOutputManager == nil {
+			models.RespondError(conn, req.ID, "wlroutput manager not initialized")
+			return
+		}
+		wlrOutputReq := wlroutput.Request{
+			ID:     req.ID,
+			Method: req.Method,
+			Params: req.Params,
+		}
+		wlroutput.HandleRequest(conn, wlrOutputReq, wlrOutputManager)
 		return
 	}
 
