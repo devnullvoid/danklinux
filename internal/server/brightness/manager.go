@@ -284,10 +284,6 @@ func (m *Manager) DecrementBrightness(deviceID string, step int) error {
 	return m.IncrementBrightness(deviceID, -step)
 }
 
-func (m *Manager) setViaSysfsWithLogind(deviceID string, percent int, exponential bool) error {
-	return m.setViaSysfsWithLogindWithExponent(deviceID, percent, exponential, 1.2)
-}
-
 func (m *Manager) setViaSysfsWithLogindWithExponent(deviceID string, percent int, exponential bool, exponent float64) error {
 	parts := strings.SplitN(deviceID, ":", 2)
 	if len(parts) != 2 {

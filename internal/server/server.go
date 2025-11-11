@@ -18,6 +18,7 @@ import (
 	"github.com/AvengeMedia/danklinux/internal/server/brightness"
 	"github.com/AvengeMedia/danklinux/internal/server/cups"
 	"github.com/AvengeMedia/danklinux/internal/server/dwl"
+	"github.com/AvengeMedia/danklinux/internal/server/extworkspace"
 	"github.com/AvengeMedia/danklinux/internal/server/freedesktop"
 	"github.com/AvengeMedia/danklinux/internal/server/loginctl"
 	"github.com/AvengeMedia/danklinux/internal/server/models"
@@ -26,7 +27,7 @@ import (
 	"github.com/AvengeMedia/danklinux/internal/server/wlcontext"
 )
 
-const APIVersion = 15
+const APIVersion = 16
 
 type Capabilities struct {
 	Capabilities []string `json:"capabilities"`
@@ -49,6 +50,7 @@ var waylandManager *wayland.Manager
 var bluezManager *bluez.Manager
 var cupsManager *cups.Manager
 var dwlManager *dwl.Manager
+var extWorkspaceManager *extworkspace.Manager
 var brightnessManager *brightness.Manager
 var wlContext *wlcontext.SharedContext
 
@@ -240,6 +242,30 @@ func InitializeBrightnessManager() error {
 	return nil
 }
 
+func InitializeExtWorkspaceManager() error {
+	log.Info("Attempting to initialize ExtWorkspace...")
+
+	if wlContext == nil {
+		ctx, err := wlcontext.New()
+		if err != nil {
+			log.Errorf("Failed to create shared Wayland context: %v", err)
+			return err
+		}
+		wlContext = ctx
+	}
+
+	manager, err := extworkspace.NewManager(wlContext.Display())
+	if err != nil {
+		log.Debug("Failed to initialize extworkspace manager: %v", err)
+		return err
+	}
+
+	extWorkspaceManager = manager
+
+	log.Info("ExtWorkspace initialized successfully")
+	return nil
+}
+
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
@@ -294,6 +320,10 @@ func getCapabilities() Capabilities {
 		caps = append(caps, "dwl")
 	}
 
+	if extWorkspaceManager != nil {
+		caps = append(caps, "extworkspace")
+	}
+
 	if brightnessManager != nil {
 		caps = append(caps, "brightness")
 	}
@@ -330,6 +360,10 @@ func getServerInfo() ServerInfo {
 
 	if dwlManager != nil {
 		caps = append(caps, "dwl")
+	}
+
+	if extWorkspaceManager != nil {
+		caps = append(caps, "extworkspace")
 	}
 
 	if brightnessManager != nil {
@@ -731,6 +765,38 @@ func handleSubscribe(conn net.Conn, req models.Request) {
 		}()
 	}
 
+	if shouldSubscribe("extworkspace") && extWorkspaceManager != nil {
+		wg.Add(1)
+		extWorkspaceChan := extWorkspaceManager.Subscribe(clientID + "-extworkspace")
+		go func() {
+			defer wg.Done()
+			defer extWorkspaceManager.Unsubscribe(clientID + "-extworkspace")
+
+			initialState := extWorkspaceManager.GetState()
+			select {
+			case eventChan <- ServiceEvent{Service: "extworkspace", Data: initialState}:
+			case <-stopChan:
+				return
+			}
+
+			for {
+				select {
+				case state, ok := <-extWorkspaceChan:
+					if !ok {
+						return
+					}
+					select {
+					case eventChan <- ServiceEvent{Service: "extworkspace", Data: state}:
+					case <-stopChan:
+						return
+					}
+				case <-stopChan:
+					return
+				}
+			}
+		}()
+	}
+
 	if shouldSubscribe("brightness") && brightnessManager != nil {
 		wg.Add(2)
 		brightnessStateChan := brightnessManager.Subscribe(clientID + "-brightness-state")
@@ -832,6 +898,9 @@ func cleanupManagers() {
 	}
 	if dwlManager != nil {
 		dwlManager.Close()
+	}
+	if extWorkspaceManager != nil {
+		extWorkspaceManager.Close()
 	}
 	if brightnessManager != nil {
 		brightnessManager.Close()
@@ -953,6 +1022,13 @@ func Start(printDocs bool) error {
 		log.Info(" dwl.setClientTags                     - Set focused client tags (params: output, andTags, xorTags)")
 		log.Info(" dwl.setLayout                         - Set layout (params: output, index)")
 		log.Info(" dwl.subscribe                         - Subscribe to dwl state changes (streaming)")
+		log.Info("ExtWorkspace:")
+		log.Info(" extworkspace.getState                 - Get current workspace state (groups, workspaces)")
+		log.Info(" extworkspace.activateWorkspace        - Activate workspace (params: groupID, workspaceID)")
+		log.Info(" extworkspace.deactivateWorkspace      - Deactivate workspace (params: groupID, workspaceID)")
+		log.Info(" extworkspace.removeWorkspace          - Remove workspace (params: groupID, workspaceID)")
+		log.Info(" extworkspace.createWorkspace          - Create workspace (params: groupID, name)")
+		log.Info(" extworkspace.subscribe                - Subscribe to workspace state changes (streaming)")
 		log.Info("Brightness:")
 		log.Info(" brightness.getState                   - Get current brightness state for all devices")
 		log.Info(" brightness.setBrightness              - Set device brightness (params: device, percent)")
@@ -1022,6 +1098,10 @@ func Start(printDocs bool) error {
 
 	if err := InitializeDwlManager(); err != nil {
 		log.Debugf("DWL manager unavailable: %v", err)
+	}
+
+	if err := InitializeExtWorkspaceManager(); err != nil {
+		log.Debugf("ExtWorkspace manager unavailable: %v", err)
 	}
 
 	go func() {

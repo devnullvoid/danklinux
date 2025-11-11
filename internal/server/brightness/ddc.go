@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/AvengeMedia/danklinux/internal/log"
 	"golang.org/x/sys/unix"
@@ -226,7 +224,7 @@ func (b *DDCBackend) SetBrightnessWithExponent(id string, value int, exponential
 				return
 			}
 
-			err := b.setBrightnessImmediateWithExponent(id, pending.percent, exponential, exponent)
+			err := b.setBrightnessImmediateWithExponent(id, pending.percent)
 			if err != nil {
 				log.Debugf("Failed to set brightness for %s: %v", id, err)
 			}
@@ -240,11 +238,7 @@ func (b *DDCBackend) SetBrightnessWithExponent(id string, value int, exponential
 	return nil
 }
 
-func (b *DDCBackend) setBrightnessImmediate(id string, value int, exponential bool) error {
-	return b.setBrightnessImmediateWithExponent(id, value, exponential, 1.2)
-}
-
-func (b *DDCBackend) setBrightnessImmediateWithExponent(id string, value int, exponential bool, exponent float64) error {
+func (b *DDCBackend) setBrightnessImmediateWithExponent(id string, value int) error {
 	b.devicesMutex.RLock()
 	dev, ok := b.devices[id]
 	b.devicesMutex.RUnlock()
@@ -480,6 +474,3 @@ func (b *DDCBackend) valueToPercent(value int, max int, exponential bool) int {
 
 func (b *DDCBackend) Close() {
 }
-
-var _ = unsafe.Sizeof(0)
-var _ = filepath.Join

@@ -9,6 +9,7 @@ import (
 	"github.com/AvengeMedia/danklinux/internal/server/brightness"
 	"github.com/AvengeMedia/danklinux/internal/server/cups"
 	"github.com/AvengeMedia/danklinux/internal/server/dwl"
+	"github.com/AvengeMedia/danklinux/internal/server/extworkspace"
 	"github.com/AvengeMedia/danklinux/internal/server/freedesktop"
 	"github.com/AvengeMedia/danklinux/internal/server/loginctl"
 	"github.com/AvengeMedia/danklinux/internal/server/models"
@@ -132,6 +133,20 @@ func RouteRequest(conn net.Conn, req models.Request) {
 			Params: req.Params,
 		}
 		brightness.HandleRequest(conn, brightnessReq, brightnessManager)
+		return
+	}
+
+	if strings.HasPrefix(req.Method, "extworkspace.") {
+		if extWorkspaceManager == nil {
+			models.RespondError(conn, req.ID, "extworkspace manager not initialized")
+			return
+		}
+		extWorkspaceReq := extworkspace.Request{
+			ID:     req.ID,
+			Method: req.Method,
+			Params: req.Params,
+		}
+		extworkspace.HandleRequest(conn, extWorkspaceReq, extWorkspaceManager)
 		return
 	}
 
