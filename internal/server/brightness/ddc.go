@@ -199,7 +199,7 @@ func (b *DDCBackend) SetBrightnessWithExponent(id string, value int, exponential
 		return fmt.Errorf("device not found: %s", id)
 	}
 
-	if value < 0 || value > 100 {
+	if value < 0 {
 		return fmt.Errorf("value out of range: %d", value)
 	}
 

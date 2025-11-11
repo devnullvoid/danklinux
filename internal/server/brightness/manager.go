@@ -179,7 +179,7 @@ func (m *Manager) SetBrightnessWithMode(deviceID string, percent int, exponentia
 }
 
 func (m *Manager) SetBrightnessWithExponent(deviceID string, percent int, exponential bool, exponent float64) error {
-	if percent < 0 || percent > 100 {
+	if percent < 0 {
 		return fmt.Errorf("percent out of range: %d", percent)
 	}
 

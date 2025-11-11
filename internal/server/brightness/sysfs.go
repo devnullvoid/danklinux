@@ -177,7 +177,7 @@ func (b *SysfsBackend) SetBrightnessWithExponent(id string, percent int, exponen
 		return err
 	}
 
-	if percent < 0 || percent > 100 {
+	if percent < 0 {
 		return fmt.Errorf("percent out of range: %d", percent)
 	}
 
