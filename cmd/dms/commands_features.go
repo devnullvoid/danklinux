@@ -250,7 +250,7 @@ func updateOtherDistros() error {
 	}
 
 	if currentTag != "" {
-		latestTagCmd := exec.Command("git", "tag", "-l", "v0.1.*", "--sort=-version:refname")
+		latestTagCmd := exec.Command("git", "tag", "-l", "v*", "--sort=-version:refname")
 		latestTagOutput, err := latestTagCmd.Output()
 		if err != nil {
 			return fmt.Errorf("failed to get latest tag: %w", err)
@@ -258,7 +258,7 @@ func updateOtherDistros() error {
 
 		tags := strings.Split(strings.TrimSpace(string(latestTagOutput)), "\n")
 		if len(tags) == 0 || tags[0] == "" {
-			return fmt.Errorf("no v0.1.* tags found")
+			return fmt.Errorf("no version tags found")
 		}
 		latestTag := tags[0]
 

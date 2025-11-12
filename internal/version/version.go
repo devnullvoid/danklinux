@@ -95,7 +95,7 @@ func GetLatestDMSVersion() (string, error) {
 				fetchCmd := exec.Command("timeout", "5s", "git", "fetch", "origin", "--tags", "--quiet")
 				fetchCmd.Run()
 
-				latestTagCmd := exec.Command("git", "tag", "-l", "v0.1.*", "--sort=-version:refname")
+				latestTagCmd := exec.Command("git", "tag", "-l", "v*", "--sort=-version:refname")
 				latestTagOutput, err := latestTagCmd.Output()
 				if err != nil {
 					return "", fmt.Errorf("failed to get latest tag: %w", err)
@@ -103,7 +103,7 @@ func GetLatestDMSVersion() (string, error) {
 
 				tags := strings.Split(strings.TrimSpace(string(latestTagOutput)), "\n")
 				if len(tags) == 0 || tags[0] == "" {
-					return "", fmt.Errorf("no v0.1.* tags found")
+					return "", fmt.Errorf("no version tags found")
 				}
 				return tags[0], nil
 			}
