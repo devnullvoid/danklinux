@@ -147,6 +147,11 @@ func runShellInteractive(session bool) {
 	errChan := make(chan error, 2)
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errChan <- fmt.Errorf("server panic: %v", r)
+			}
+		}()
 		if err := server.Start(false); err != nil {
 			errChan <- fmt.Errorf("server error: %w", err)
 		}
@@ -180,6 +185,12 @@ func runShellInteractive(session bool) {
 		log.Warnf("Failed to write PID file: %v", err)
 	}
 	defer removePIDFile()
+
+	defer func() {
+		if cmd.Process != nil {
+			cmd.Process.Signal(syscall.SIGTERM)
+		}
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
@@ -358,6 +369,11 @@ func runShellDaemon(session bool) {
 	errChan := make(chan error, 2)
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errChan <- fmt.Errorf("server panic: %v", r)
+			}
+		}()
 		if err := server.Start(false); err != nil {
 			errChan <- fmt.Errorf("server error: %w", err)
 		}
@@ -397,6 +413,12 @@ func runShellDaemon(session bool) {
 		log.Warnf("Failed to write PID file: %v", err)
 	}
 	defer removePIDFile()
+
+	defer func() {
+		if cmd.Process != nil {
+			cmd.Process.Signal(syscall.SIGTERM)
+		}
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
