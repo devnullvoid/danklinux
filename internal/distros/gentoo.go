@@ -11,7 +11,6 @@ import (
 )
 
 var GentooGlobalUseFlags = []string{
-	"X",
 	"dbus",
 	"udev",
 	"alsa",
@@ -40,7 +39,8 @@ func init() {
 type GentooDistribution struct {
 	*BaseDistribution
 	*ManualPackageInstaller
-	config DistroConfig
+	config             DistroConfig
+	skipGlobalUseFlags bool
 }
 
 func NewGentooDistribution(config DistroConfig, logChan chan<- string) *GentooDistribution {
@@ -210,7 +210,7 @@ func (g *GentooDistribution) GetPackageMappingWithVariants(wm deps.WindowManager
 		packages["grim"] = PackageMapping{Name: "gui-apps/grim", Repository: RepoTypeSystem}
 		packages["slurp"] = PackageMapping{Name: "gui-apps/slurp", Repository: RepoTypeSystem}
 		packages["hyprctl"] = g.getHyprlandMapping(variants["hyprland"])
-		packages["grimblast"] = PackageMapping{Name: "grimblast", Repository: RepoTypeManual, BuildFunc: "installGrimblast"}
+		packages["grimblast"] = PackageMapping{Name: "gui-wm/hyprland-contrib", Repository: RepoTypeGURU, AcceptKeywords: archKeyword}
 		packages["jq"] = PackageMapping{Name: "app-misc/jq", Repository: RepoTypeSystem}
 	case deps.WindowManagerNiri:
 		packages["niri"] = g.getNiriMapping(variants["niri"])
@@ -282,17 +282,27 @@ func (g *GentooDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 	prerequisites := g.getPrerequisites()
 	var missingPkgs []string
 
-	progressChan <- InstallProgressMsg{
-		Phase:      PhasePrerequisites,
-		Progress:   0.05,
-		Step:       "Setting global USE flags...",
-		IsComplete: false,
-		LogOutput:  "Configuring global USE flags in /etc/portage/make.conf",
-	}
+	if !g.skipGlobalUseFlags {
+		progressChan <- InstallProgressMsg{
+			Phase:      PhasePrerequisites,
+			Progress:   0.05,
+			Step:       "Setting global USE flags...",
+			IsComplete: false,
+			LogOutput:  "Configuring global USE flags in /etc/portage/make.conf",
+		}
 
-	if err := g.setGlobalUseFlags(ctx, sudoPassword); err != nil {
-		g.logError("failed to set global USE flags", err)
-		return fmt.Errorf("failed to set global USE flags: %w", err)
+		if err := g.setGlobalUseFlags(ctx, sudoPassword); err != nil {
+			g.logError("failed to set global USE flags", err)
+			return fmt.Errorf("failed to set global USE flags: %w", err)
+		}
+	} else {
+		progressChan <- InstallProgressMsg{
+			Phase:      PhasePrerequisites,
+			Progress:   0.05,
+			Step:       "Skipping global USE flags...",
+			IsComplete: false,
+			LogOutput:  "Skipping global USE flags configuration (using existing configuration)",
+		}
 	}
 
 	progressChan <- InstallProgressMsg{
@@ -367,7 +377,9 @@ func (g *GentooDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 	return nil
 }
 
-func (g *GentooDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, progressChan chan<- InstallProgressMsg) error {
+func (g *GentooDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, disabledFlags map[string]bool, skipGlobalUseFlags bool, progressChan chan<- InstallProgressMsg) error {
+	g.skipGlobalUseFlags = skipGlobalUseFlags
+
 	progressChan <- InstallProgressMsg{
 		Phase:      PhasePrerequisites,
 		Progress:   0.05,
@@ -380,7 +392,7 @@ func (g *GentooDistribution) InstallPackages(ctx context.Context, dependencies [
 		return fmt.Errorf("failed to install prerequisites: %w", err)
 	}
 
-	systemPkgs, guruPkgs, manualPkgs := g.categorizePackages(dependencies, wm, reinstallFlags)
+	systemPkgs, guruPkgs, manualPkgs := g.categorizePackages(dependencies, wm, reinstallFlags, disabledFlags)
 
 	g.log(fmt.Sprintf("CATEGORIZED PACKAGES: system=%d, guru=%d, manual=%d", len(systemPkgs), len(guruPkgs), len(manualPkgs)))
 
@@ -460,7 +472,7 @@ func (g *GentooDistribution) InstallPackages(ctx context.Context, dependencies [
 	return nil
 }
 
-func (g *GentooDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool) ([]PackageMapping, []PackageMapping, []string) {
+func (g *GentooDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool, disabledFlags map[string]bool) ([]PackageMapping, []PackageMapping, []string) {
 	systemPkgs := []PackageMapping{}
 	guruPkgs := []PackageMapping{}
 	manualPkgs := []string{}
@@ -473,6 +485,10 @@ func (g *GentooDistribution) categorizePackages(dependencies []deps.Dependency, 
 	packageMap := g.GetPackageMappingWithVariants(wm, variantMap)
 
 	for _, dep := range dependencies {
+		if disabledFlags[dep.Name] {
+			continue
+		}
+
 		if dep.Status == deps.StatusInstalled && !reinstallFlags[dep.Name] {
 			continue
 		}

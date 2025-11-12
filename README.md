@@ -255,7 +255,7 @@ curl -fsSL https://install.danklinux.com | sh
 |---------|---------|-------|
 | System packages (git, etc.) | Official repos | Via `emerge` |
 | niri | GURU overlay | With dbus and screencast USE flags |
-| hyprland | GURU/Official | Depends on variant selection, with X USE flag |
+| hyprland | Official repos (GURU for -git) | Depends on variant selection, with X USE flag |
 | quickshell | GURU overlay | Always uses live ebuild (`**` keywords), full feature set |
 | matugen | GURU overlay | Color generation tool |
 | cliphist | GURU overlay | Clipboard manager |

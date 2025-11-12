@@ -294,7 +294,7 @@ func (n *NixOSDistribution) InstallPrerequisites(ctx context.Context, sudoPasswo
 	return nil
 }
 
-func (n *NixOSDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, progressChan chan<- InstallProgressMsg) error {
+func (n *NixOSDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, disabledFlags map[string]bool, skipGlobalUseFlags bool, progressChan chan<- InstallProgressMsg) error {
 	// Phase 1: Check Prerequisites
 	progressChan <- InstallProgressMsg{
 		Phase:      PhasePrerequisites,
@@ -308,7 +308,7 @@ func (n *NixOSDistribution) InstallPackages(ctx context.Context, dependencies []
 		return fmt.Errorf("failed to install prerequisites: %w", err)
 	}
 
-	nixpkgsPkgs, flakePkgs := n.categorizePackages(dependencies, wm, reinstallFlags)
+	nixpkgsPkgs, flakePkgs := n.categorizePackages(dependencies, wm, reinstallFlags, disabledFlags)
 
 	// Phase 2: Nixpkgs Packages
 	if len(nixpkgsPkgs) > 0 {
@@ -362,14 +362,17 @@ func (n *NixOSDistribution) InstallPackages(ctx context.Context, dependencies []
 	return nil
 }
 
-func (n *NixOSDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool) ([]string, []string) {
+func (n *NixOSDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool, disabledFlags map[string]bool) ([]string, []string) {
 	nixpkgsPkgs := []string{}
 	flakePkgs := []string{}
 
 	packageMap := n.GetPackageMapping(wm)
 
 	for _, dep := range dependencies {
-		// Skip installed packages unless marked for reinstall
+		if disabledFlags[dep.Name] {
+			continue
+		}
+
 		if dep.Status == deps.StatusInstalled && !reinstallFlags[dep.Name] {
 			continue
 		}

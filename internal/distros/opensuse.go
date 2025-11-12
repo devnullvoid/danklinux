@@ -280,7 +280,7 @@ func (o *OpenSUSEDistribution) InstallPrerequisites(ctx context.Context, sudoPas
 	return nil
 }
 
-func (o *OpenSUSEDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, progressChan chan<- InstallProgressMsg) error {
+func (o *OpenSUSEDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, disabledFlags map[string]bool, skipGlobalUseFlags bool, progressChan chan<- InstallProgressMsg) error {
 	// Phase 1: Check Prerequisites
 	progressChan <- InstallProgressMsg{
 		Phase:      PhasePrerequisites,
@@ -294,7 +294,7 @@ func (o *OpenSUSEDistribution) InstallPackages(ctx context.Context, dependencies
 		return fmt.Errorf("failed to install prerequisites: %w", err)
 	}
 
-	systemPkgs, manualPkgs := o.categorizePackages(dependencies, wm, reinstallFlags)
+	systemPkgs, manualPkgs := o.categorizePackages(dependencies, wm, reinstallFlags, disabledFlags)
 
 	// Phase 2: System Packages (Zypper)
 	if len(systemPkgs) > 0 {
@@ -346,7 +346,7 @@ func (o *OpenSUSEDistribution) InstallPackages(ctx context.Context, dependencies
 	return nil
 }
 
-func (o *OpenSUSEDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool) ([]string, []string) {
+func (o *OpenSUSEDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool, disabledFlags map[string]bool) ([]string, []string) {
 	systemPkgs := []string{}
 	manualPkgs := []string{}
 
@@ -358,7 +358,10 @@ func (o *OpenSUSEDistribution) categorizePackages(dependencies []deps.Dependency
 	packageMap := o.GetPackageMappingWithVariants(wm, variantMap)
 
 	for _, dep := range dependencies {
-		// Skip installed packages unless marked for reinstall
+		if disabledFlags[dep.Name] {
+			continue
+		}
+
 		if dep.Status == deps.StatusInstalled && !reinstallFlags[dep.Name] {
 			continue
 		}

@@ -307,7 +307,7 @@ func (a *ArchDistribution) InstallPrerequisites(ctx context.Context, sudoPasswor
 	return nil
 }
 
-func (a *ArchDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, progressChan chan<- InstallProgressMsg) error {
+func (a *ArchDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, disabledFlags map[string]bool, skipGlobalUseFlags bool, progressChan chan<- InstallProgressMsg) error {
 	// Phase 1: Check Prerequisites
 	progressChan <- InstallProgressMsg{
 		Phase:      PhasePrerequisites,
@@ -321,7 +321,7 @@ func (a *ArchDistribution) InstallPackages(ctx context.Context, dependencies []d
 		return fmt.Errorf("failed to install prerequisites: %w", err)
 	}
 
-	systemPkgs, aurPkgs, manualPkgs := a.categorizePackages(dependencies, wm, reinstallFlags)
+	systemPkgs, aurPkgs, manualPkgs := a.categorizePackages(dependencies, wm, reinstallFlags, disabledFlags)
 
 	// Phase 3: System Packages
 	if len(systemPkgs) > 0 {
@@ -387,7 +387,7 @@ func (a *ArchDistribution) InstallPackages(ctx context.Context, dependencies []d
 	return nil
 }
 
-func (a *ArchDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool) ([]string, []string, []string) {
+func (a *ArchDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool, disabledFlags map[string]bool) ([]string, []string, []string) {
 	systemPkgs := []string{}
 	aurPkgs := []string{}
 	manualPkgs := []string{}
@@ -400,7 +400,10 @@ func (a *ArchDistribution) categorizePackages(dependencies []deps.Dependency, wm
 	packageMap := a.GetPackageMappingWithVariants(wm, variantMap)
 
 	for _, dep := range dependencies {
-		// Skip installed packages unless marked for reinstall
+		if disabledFlags[dep.Name] {
+			continue
+		}
+
 		if dep.Status == deps.StatusInstalled && !reinstallFlags[dep.Name] {
 			continue
 		}

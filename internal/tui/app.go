@@ -25,23 +25,26 @@ type Model struct {
 
 	logMessages         []string
 	logChan             chan string
+	logFilePath         string
 	packageProgressChan chan packageInstallProgressMsg
 	packageProgress     packageInstallProgressMsg
 	installationLogs    []string
 	showDebugLogs       bool
 
-	selectedWM        int
-	selectedTerminal  int
-	selectedDep       int
-	selectedConfig    int
-	reinstallItems    map[string]bool
-	replaceConfigs    map[string]bool
-	sudoPassword      string
-	existingConfigs   []ExistingConfigInfo
-	fingerprintFailed bool
+	selectedWM         int
+	selectedTerminal   int
+	selectedDep        int
+	selectedConfig     int
+	reinstallItems     map[string]bool
+	disabledItems      map[string]bool
+	replaceConfigs     map[string]bool
+	skipGentooUseFlags bool
+	sudoPassword       string
+	existingConfigs    []ExistingConfigInfo
+	fingerprintFailed  bool
 }
 
-func NewModel(version string) Model {
+func NewModel(version string, logFilePath string) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 
@@ -68,6 +71,7 @@ func NewModel(version string) Model {
 
 		logMessages:         []string{},
 		logChan:             logChan,
+		logFilePath:         logFilePath,
 		packageProgressChan: packageProgressChan,
 		packageProgress: packageInstallProgressMsg{
 			progress:   0.0,
@@ -80,9 +84,14 @@ func NewModel(version string) Model {
 		selectedDep:      0,
 		selectedConfig:   0,
 		reinstallItems:   make(map[string]bool),
+		disabledItems:    make(map[string]bool),
 		replaceConfigs:   make(map[string]bool),
 		installationLogs: []string{},
 	}
+}
+
+func (m Model) GetLogChan() <-chan string {
+	return m.logChan
 }
 
 func (m Model) Init() tea.Cmd {

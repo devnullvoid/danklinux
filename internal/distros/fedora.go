@@ -300,7 +300,7 @@ func (f *FedoraDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 	return nil
 }
 
-func (f *FedoraDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, progressChan chan<- InstallProgressMsg) error {
+func (f *FedoraDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, disabledFlags map[string]bool, skipGlobalUseFlags bool, progressChan chan<- InstallProgressMsg) error {
 	// Phase 1: Check Prerequisites
 	progressChan <- InstallProgressMsg{
 		Phase:      PhasePrerequisites,
@@ -314,7 +314,7 @@ func (f *FedoraDistribution) InstallPackages(ctx context.Context, dependencies [
 		return fmt.Errorf("failed to install prerequisites: %w", err)
 	}
 
-	dnfPkgs, coprPkgs, manualPkgs := f.categorizePackages(dependencies, wm, reinstallFlags)
+	dnfPkgs, coprPkgs, manualPkgs := f.categorizePackages(dependencies, wm, reinstallFlags, disabledFlags)
 
 	// Phase 2: Enable COPR repositories
 	if len(coprPkgs) > 0 {
@@ -395,7 +395,7 @@ func (f *FedoraDistribution) InstallPackages(ctx context.Context, dependencies [
 	return nil
 }
 
-func (f *FedoraDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool) ([]string, []PackageMapping, []string) {
+func (f *FedoraDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool, disabledFlags map[string]bool) ([]string, []PackageMapping, []string) {
 	dnfPkgs := []string{}
 	coprPkgs := []PackageMapping{}
 	manualPkgs := []string{}
@@ -408,7 +408,10 @@ func (f *FedoraDistribution) categorizePackages(dependencies []deps.Dependency, 
 	packageMap := f.GetPackageMappingWithVariants(wm, variantMap)
 
 	for _, dep := range dependencies {
-		// Skip installed packages unless marked for reinstall
+		if disabledFlags[dep.Name] {
+			continue
+		}
+
 		if dep.Status == deps.StatusInstalled && !reinstallFlags[dep.Name] {
 			continue
 		}

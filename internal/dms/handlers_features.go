@@ -171,7 +171,8 @@ func (m Model) performUpdate() tea.Cmd {
 
 		go func() {
 			ctx := context.Background()
-			err := distribution.InstallPackages(ctx, depsToUpdate, wm, sudoPassword, reinstallFlags, installerChan)
+			disabledFlags := make(map[string]bool)
+			err := distribution.InstallPackages(ctx, depsToUpdate, wm, sudoPassword, reinstallFlags, disabledFlags, false, installerChan)
 			close(installerChan)
 
 			if err != nil {

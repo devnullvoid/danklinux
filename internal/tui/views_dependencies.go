@@ -49,9 +49,12 @@ func (m Model) viewDependencyReview() string {
 				variantMarker = "[git] "
 			}
 
-			if m.reinstallItems[dep.Name] {
+			if m.disabledItems[dep.Name] {
+				reinstallMarker = "✗ "
+				status = m.styles.Subtle.Render("Will skip")
+			} else if m.reinstallItems[dep.Name] {
 				reinstallMarker = "🔄 "
-				status = m.styles.Warning.Render("Will reinstall")
+				status = m.styles.Warning.Render("Will upgrade")
 			} else if isDMS {
 				reinstallMarker = "⚡ "
 				switch dep.Status {
@@ -67,13 +70,13 @@ func (m Model) viewDependencyReview() string {
 			} else {
 				switch dep.Status {
 				case deps.StatusInstalled:
-					status = m.styles.Success.Render("✓ Already Installed")
+					status = m.styles.Subtle.Render("✓ Already installed")
 				case deps.StatusMissing:
-					status = m.styles.Warning.Render("○ Will be installed")
+					status = m.styles.Warning.Render("○ Will install")
 				case deps.StatusNeedsUpdate:
-					status = m.styles.Warning.Render("△ Needs update")
+					status = m.styles.Warning.Render("△ Will install")
 				case deps.StatusNeedsReinstall:
-					status = m.styles.Error.Render("! Needs reinstall")
+					status = m.styles.Error.Render("! Will install")
 				}
 			}
 
@@ -98,7 +101,7 @@ func (m Model) viewDependencyReview() string {
 	}
 
 	b.WriteString("\n")
-	help := m.styles.Subtle.Render("↑/↓: Navigate, Space: Toggle reinstall, G: Toggle stable/git, Enter: Continue")
+	help := m.styles.Subtle.Render("↑/↓: Navigate, Space: Toggle, G: Toggle stable/git, Enter: Continue")
 	b.WriteString(help)
 
 	return b.String()
@@ -133,10 +136,19 @@ func (m Model) updateDependencyReviewState(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case " ":
 			if len(m.dependencies) > 0 {
 				depName := m.dependencies[m.selectedDep].Name
+				isDMS := depName == "dms (DankMaterialShell)"
 
-				if m.dependencies[m.selectedDep].Status == deps.StatusInstalled ||
-					m.dependencies[m.selectedDep].Status == deps.StatusNeedsReinstall {
-					m.reinstallItems[depName] = !m.reinstallItems[depName]
+				if !isDMS {
+					isInstalled := m.dependencies[m.selectedDep].Status == deps.StatusInstalled ||
+						m.dependencies[m.selectedDep].Status == deps.StatusNeedsReinstall
+
+					if isInstalled {
+						m.reinstallItems[depName] = !m.reinstallItems[depName]
+						m.disabledItems[depName] = false
+					} else {
+						m.disabledItems[depName] = !m.disabledItems[depName]
+						m.reinstallItems[depName] = false
+					}
 				}
 			}
 		case "g", "G":
@@ -204,7 +216,7 @@ func (m Model) installPackages() tea.Cmd {
 
 		go func() {
 			defer close(installerProgressChan)
-			err := installer.InstallPackages(context.Background(), m.dependencies, wm, m.sudoPassword, m.reinstallItems, installerProgressChan)
+			err := installer.InstallPackages(context.Background(), m.dependencies, wm, m.sudoPassword, m.reinstallItems, m.disabledItems, m.skipGentooUseFlags, installerProgressChan)
 			if err != nil {
 				installerProgressChan <- distros.InstallProgressMsg{
 					Progress:   0.0,

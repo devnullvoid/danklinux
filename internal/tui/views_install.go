@@ -149,6 +149,12 @@ func (m Model) viewInstallComplete() string {
 	info := m.styles.Normal.Render("Your system is ready! Log out and log back in to start using\nyour new desktop environment.\nIf you do not have a greeter, login with \"niri-session\" or \"Hyprland\" \n\nPress Enter to exit.")
 	b.WriteString(info)
 
+	if m.logFilePath != "" {
+		b.WriteString("\n\n")
+		logInfo := m.styles.Subtle.Render(fmt.Sprintf("Full logs: %s", m.logFilePath))
+		b.WriteString(logInfo)
+	}
+
 	return b.String()
 }
 
@@ -202,6 +208,13 @@ func (m Model) viewError() string {
 	hint := m.styles.Subtle.Render("Press Ctrl+D for full debug logs")
 	b.WriteString(hint)
 	b.WriteString("\n")
+
+	if m.logFilePath != "" {
+		b.WriteString("\n")
+		logInfo := m.styles.Warning.Render(fmt.Sprintf("Full logs: %s", m.logFilePath))
+		b.WriteString(logInfo)
+		b.WriteString("\n")
+	}
 
 	help := m.styles.Subtle.Render("Press Enter to exit")
 	b.WriteString(help)

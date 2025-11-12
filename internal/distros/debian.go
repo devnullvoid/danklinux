@@ -225,7 +225,7 @@ func (d *DebianDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 	return nil
 }
 
-func (d *DebianDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, progressChan chan<- InstallProgressMsg) error {
+func (d *DebianDistribution) InstallPackages(ctx context.Context, dependencies []deps.Dependency, wm deps.WindowManager, sudoPassword string, reinstallFlags map[string]bool, disabledFlags map[string]bool, skipGlobalUseFlags bool, progressChan chan<- InstallProgressMsg) error {
 	progressChan <- InstallProgressMsg{
 		Phase:      PhasePrerequisites,
 		Progress:   0.05,
@@ -238,7 +238,7 @@ func (d *DebianDistribution) InstallPackages(ctx context.Context, dependencies [
 		return fmt.Errorf("failed to install prerequisites: %w", err)
 	}
 
-	systemPkgs, manualPkgs := d.categorizePackages(dependencies, wm, reinstallFlags)
+	systemPkgs, manualPkgs := d.categorizePackages(dependencies, wm, reinstallFlags, disabledFlags)
 
 	if len(systemPkgs) > 0 {
 		progressChan <- InstallProgressMsg{
@@ -297,13 +297,17 @@ func (d *DebianDistribution) InstallPackages(ctx context.Context, dependencies [
 	return nil
 }
 
-func (d *DebianDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool) ([]string, []string) {
+func (d *DebianDistribution) categorizePackages(dependencies []deps.Dependency, wm deps.WindowManager, reinstallFlags map[string]bool, disabledFlags map[string]bool) ([]string, []string) {
 	systemPkgs := []string{}
 	manualPkgs := []string{}
 
 	packageMap := d.GetPackageMapping(wm)
 
 	for _, dep := range dependencies {
+		if disabledFlags[dep.Name] {
+			continue
+		}
+
 		if dep.Status == deps.StatusInstalled && !reinstallFlags[dep.Name] {
 			continue
 		}

@@ -33,7 +33,18 @@ func (m Model) viewGentooUseFlags() string {
 	b.WriteString(note)
 	b.WriteString("\n\n")
 
-	help := m.styles.Subtle.Render("Press Enter to continue, Esc to go back")
+	var toggleLine string
+	if m.skipGentooUseFlags {
+		toggleLine = "▶ [✗] Skip adding global USE flags (will use existing configuration)"
+		toggleLine = m.styles.Warning.Render(toggleLine)
+	} else {
+		toggleLine = "  [ ] Skip adding global USE flags (will use existing configuration)"
+		toggleLine = m.styles.Subtle.Render(toggleLine)
+	}
+	b.WriteString(toggleLine)
+	b.WriteString("\n\n")
+
+	help := m.styles.Subtle.Render("Space: Toggle skip, Enter: Continue, Esc: Go back")
 	b.WriteString(help)
 
 	return b.String()
@@ -57,6 +68,9 @@ func (m Model) updateGentooUseFlagsState(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
+		case " ":
+			m.skipGentooUseFlags = !m.skipGentooUseFlags
+			return m, nil
 		case "enter":
 			if m.selectedWM == 1 {
 				return m, m.checkGCCVersion()
