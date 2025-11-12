@@ -370,5 +370,6 @@ func getCommonCommands() []*cobra.Command {
 		brightnessCmd,
 		keybindsCmd,
 		greeterCmd,
+		setupCmd,
 	}
 }
