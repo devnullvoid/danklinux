@@ -28,6 +28,11 @@ A monorepo for dankinstall and dms (cli+go backend), a modern desktop suite for 
   - Exposes a json API over unix socket for interaction with these interfaces
   - Provides plugin management APIs for the shell
   - CUPS integration for printer management
+  - ddc/ci protocol implementation
+    - Allows controlling brightness of external monitors, like `ddcutil`
+  - backlight + led control integration
+    - Allows controlling backlight of integrated displays, or LED devices
+    - Uses `login1` when available, else falls back to sysfs writes.
   - Optionally provides `update` interface - depending on build inputs.
     - This is intended to be disabled when packaged as part of distribution packages.
 - **dankinstall** Installs the Dank Linux suite for [niri](https://github.com/YaLTeR/niri) and/or [Hyprland](https://hypr.land)
@@ -39,37 +44,18 @@ A monorepo for dankinstall and dms (cli+go backend), a modern desktop suite for 
 
 # dms cli & backend
 
-A part of the DankMaterialShell, that is provided by this repository. It is written in GO, and exposes a suite of APIs over unix socket that interface with dbus via [godbus](https://github.com/godbus/dbus) and also the plugin system.
+Written in Go, provides a suite of APIs over unix socket via [godbus](https://github.com/godbus/dbus) and Wayland protocols. All features listed above are exposed over the socket API.
 
-**Backend** (all exposed over a unix socket json API):
+*Run `dms debug-srv` to start the socket service in standalone mode and see available APIs*
 
-- **dbus**
-  - networking - full integration with pluggable backends - NetworkManager, iwd
-  - bluez - integration with a pairing agent
-  - loginctl - creates sleep inhibitor, integrates lock before suspend, signals for lock/unlock
-  - accountsservice - suite of user profile APIs - name, email, profile picture, etc.
-  - cups - printer management and configuration
-- **dms plugins**
-  - APIs to browse, install, update, and search available plugins
-- **wayland**
-  - Implements [wlr-gamma-control-unstable-v1](https://wayland.app/protocols/wlr-gamma-control-unstable-v1)
-    - Essentially, provides auto or manual gamma control similar to a tool like [gammastep](https://gitlab.com/chinstrap/gammastep) or [wlsunset](https://github.com/kennylevinsen/wlsunset)
-  - Implements dwl-ipc-unstable-v2
-    - For dwl (tested with MangoWC) integration
-  - Implements ext-workspace-v1
-    - Generic interface for workspaces.
-  - Implements wlr-output-management-unstable-v1
-    - Generic actions and information relevant to monitors/outputs
-
-*run `dms debug-srv` to run the socket service in standalone mode, and see a list of available APIs*
-
-**cli**
-
-- manage process: run, restart, kill
-- IPC with dms: toggle launcher, notification popup, etc.
-- plugins: install/browse/search (use plugin IDs like `dms plugins install myPlugin`)
-- update (some builds): Update DMS and dependencies, (disabled for Arch AUR and Fedora copr installs, as it is handled by pacman/dnf)
-- greeter (some builds): Install the dms greetd greeter (on arch/fedora it is disabled in favor of OS packages)
+**CLI Commands:**
+- `dms run [-d]` - Start shell (optionally as daemon)
+- `dms restart` / `dms kill` - Manage running processes
+- `dms ipc <command>` - Send IPC commands (toggle launcher, notifications, etc.)
+- `dms plugins [install|browse|search]` - Plugin management
+- `dms brightness [list|set]` - Control display/monitor brightness
+- `dms update` - Update DMS and dependencies (disabled in distro packages)
+- `dms greeter install` - Install greetd greeter (disabled in distro packages)
 
 ## Build & Install
 
