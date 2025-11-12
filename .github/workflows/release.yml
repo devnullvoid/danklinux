@@ -61,6 +61,15 @@ jobs:
           gzip -9 -k dms-${{ matrix.arch }}
           sha256sum dms-${{ matrix.arch }}.gz > dms-${{ matrix.arch }}.gz.sha256
 
+      - name: Generate shell completions
+        if: matrix.arch == 'amd64'
+        run: |
+          set -eux
+          chmod +x dms-amd64
+          ./dms-amd64 completion bash > completion.bash
+          ./dms-amd64 completion fish > completion.fish
+          ./dms-amd64 completion zsh > completion.zsh
+
       - name: Build dms-distropkg (${{ matrix.arch }})
         env:
           GOOS: linux
@@ -76,6 +85,7 @@ jobs:
           sha256sum dms-distropkg-${{ matrix.arch }}.gz > dms-distropkg-${{ matrix.arch }}.gz.sha256
 
       - name: Upload artifacts (${{ matrix.arch }})
+        if: matrix.arch == 'arm64'
         uses: actions/upload-artifact@v4
         with:
           name: release-assets-${{ matrix.arch }}
@@ -86,6 +96,23 @@ jobs:
             dms-${{ matrix.arch }}.gz.sha256
             dms-distropkg-${{ matrix.arch }}.gz
             dms-distropkg-${{ matrix.arch }}.gz.sha256
+          if-no-files-found: error
+
+      - name: Upload artifacts with completions
+        if: matrix.arch == 'amd64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ matrix.arch }}
+          path: |
+            dankinstall-${{ matrix.arch }}.gz
+            dankinstall-${{ matrix.arch }}.gz.sha256
+            dms-${{ matrix.arch }}.gz
+            dms-${{ matrix.arch }}.gz.sha256
+            dms-distropkg-${{ matrix.arch }}.gz
+            dms-distropkg-${{ matrix.arch }}.gz.sha256
+            completion.bash
+            completion.fish
+            completion.zsh
           if-no-files-found: error
 
   update-flake-version:
