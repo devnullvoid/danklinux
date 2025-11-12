@@ -220,7 +220,7 @@ func (g *GentooDistribution) GetPackageMappingWithVariants(wm deps.WindowManager
 	return packages
 }
 
-func (g *GentooDistribution) getQuickshellMapping(variant deps.PackageVariant) PackageMapping {
+func (g *GentooDistribution) getQuickshellMapping(_ deps.PackageVariant) PackageMapping {
 	return PackageMapping{Name: "gui-apps/quickshell", Repository: RepoTypeGURU, UseFlags: "breakpad jemalloc sockets wayland layer-shell session-lock toplevel-management screencopy X pipewire tray mpris pam hyprland hyprland-global-shortcuts hyprland-focus-grab i3 i3-ipc bluetooth", AcceptKeywords: "**"}
 }
 
@@ -240,7 +240,7 @@ func (g *GentooDistribution) getHyprpickerMapping(_ deps.PackageVariant) Package
 	return PackageMapping{Name: "gui-apps/hyprpicker", Repository: RepoTypeGURU, AcceptKeywords: g.getArchKeyword()}
 }
 
-func (g *GentooDistribution) getNiriMapping(variant deps.PackageVariant) PackageMapping {
+func (g *GentooDistribution) getNiriMapping(_ deps.PackageVariant) PackageMapping {
 	return PackageMapping{Name: "gui-wm/niri", Repository: RepoTypeGURU, UseFlags: "dbus screencast", AcceptKeywords: g.getArchKeyword()}
 }
 
@@ -263,9 +263,9 @@ func (g *GentooDistribution) setGlobalUseFlags(ctx context.Context, sudoPassword
 
 	var cmd *exec.Cmd
 	if hasUse {
-		cmd = execSudoCommand(ctx, sudoPassword, fmt.Sprintf("sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf; exit_code=$?; exit $exit_code", useFlags))
+		cmd = ExecSudoCommand(ctx, sudoPassword, fmt.Sprintf("sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf; exit_code=$?; exit $exit_code", useFlags))
 	} else {
-		cmd = execSudoCommand(ctx, sudoPassword, fmt.Sprintf("bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"; exit_code=$?; exit $exit_code", useFlags))
+		cmd = ExecSudoCommand(ctx, sudoPassword, fmt.Sprintf("bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"; exit_code=$?; exit $exit_code", useFlags))
 	}
 
 	output, err := cmd.CombinedOutput()
@@ -333,7 +333,7 @@ func (g *GentooDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 		LogOutput:   "Syncing Portage tree with emerge --sync",
 	}
 
-	syncCmd := execSudoCommand(ctx, sudoPassword,
+	syncCmd := ExecSudoCommand(ctx, sudoPassword,
 		"emerge --sync --quiet; exit_code=$?; exit $exit_code")
 	syncOutput, syncErr := syncCmd.CombinedOutput()
 	if syncErr != nil {
@@ -355,7 +355,7 @@ func (g *GentooDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 
 	args := []string{"emerge", "--ask=n", "--quiet"}
 	args = append(args, missingPkgs...)
-	cmd := execSudoCommand(ctx, sudoPassword, fmt.Sprintf("%s; exit_code=$?; exit $exit_code", strings.Join(args, " ")))
+	cmd := ExecSudoCommand(ctx, sudoPassword, fmt.Sprintf("%s; exit_code=$?; exit $exit_code", strings.Join(args, " ")))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		g.logError("failed to install prerequisites", err)
@@ -537,14 +537,14 @@ func (g *GentooDistribution) installPortagePackages(ctx context.Context, package
 		CommandInfo: fmt.Sprintf("sudo %s", strings.Join(args, " ")),
 	}
 
-	cmd := execSudoCommand(ctx, sudoPassword, fmt.Sprintf("%s || exit $?", strings.Join(args, " ")))
+	cmd := ExecSudoCommand(ctx, sudoPassword, fmt.Sprintf("%s || exit $?", strings.Join(args, " ")))
 	return g.runWithProgressTimeout(cmd, progressChan, PhaseSystemPackages, 0.40, 0.60, 0)
 }
 
 func (g *GentooDistribution) setPackageUseFlags(ctx context.Context, packageName, useFlags, sudoPassword string) error {
 	packageUseDir := "/etc/portage/package.use"
 
-	mkdirCmd := execSudoCommand(ctx, sudoPassword,
+	mkdirCmd := ExecSudoCommand(ctx, sudoPassword,
 		fmt.Sprintf("mkdir -p %s", packageUseDir))
 	if output, err := mkdirCmd.CombinedOutput(); err != nil {
 		g.log(fmt.Sprintf("mkdir output: %s", string(output)))
@@ -558,7 +558,7 @@ func (g *GentooDistribution) setPackageUseFlags(ctx context.Context, packageName
 	if checkExistingCmd.Run() == nil {
 		g.log(fmt.Sprintf("Updating USE flags for %s from existing entry", packageName))
 		escapedPkg := strings.ReplaceAll(packageName, "/", "\\/")
-		replaceCmd := execSudoCommand(ctx, sudoPassword,
+		replaceCmd := ExecSudoCommand(ctx, sudoPassword,
 			fmt.Sprintf("sed -i '/^%s /d' %s/danklinux; exit_code=$?; exit $exit_code", escapedPkg, packageUseDir))
 		if output, err := replaceCmd.CombinedOutput(); err != nil {
 			g.log(fmt.Sprintf("sed delete output: %s", string(output)))
@@ -566,7 +566,7 @@ func (g *GentooDistribution) setPackageUseFlags(ctx context.Context, packageName
 		}
 	}
 
-	appendCmd := execSudoCommand(ctx, sudoPassword,
+	appendCmd := ExecSudoCommand(ctx, sudoPassword,
 		fmt.Sprintf("bash -c \"echo '%s' >> %s/danklinux\"", useFlagLine, packageUseDir))
 
 	output, err := appendCmd.CombinedOutput()
@@ -591,7 +591,7 @@ func (g *GentooDistribution) syncGURURepo(ctx context.Context, sudoPassword stri
 	}
 
 	// Enable GURU repository
-	enableCmd := execSudoCommand(ctx, sudoPassword,
+	enableCmd := ExecSudoCommand(ctx, sudoPassword,
 		"eselect repository enable guru 2>&1; exit_code=$?; exit $exit_code")
 	output, err := enableCmd.CombinedOutput()
 
@@ -623,7 +623,7 @@ func (g *GentooDistribution) syncGURURepo(ctx context.Context, sudoPassword stri
 		LogOutput:   "Syncing GURU repository",
 	}
 
-	syncCmd := execSudoCommand(ctx, sudoPassword,
+	syncCmd := ExecSudoCommand(ctx, sudoPassword,
 		"emaint sync --repo guru 2>&1; exit_code=$?; exit $exit_code")
 	syncOutput, syncErr := syncCmd.CombinedOutput()
 
@@ -656,7 +656,7 @@ func (g *GentooDistribution) setPackageAcceptKeywords(ctx context.Context, packa
 
 	acceptKeywordsDir := "/etc/portage/package.accept_keywords"
 
-	mkdirCmd := execSudoCommand(ctx, sudoPassword,
+	mkdirCmd := ExecSudoCommand(ctx, sudoPassword,
 		fmt.Sprintf("mkdir -p %s", acceptKeywordsDir))
 	if output, err := mkdirCmd.CombinedOutput(); err != nil {
 		g.log(fmt.Sprintf("mkdir output: %s", string(output)))
@@ -670,7 +670,7 @@ func (g *GentooDistribution) setPackageAcceptKeywords(ctx context.Context, packa
 	if checkExistingCmd.Run() == nil {
 		g.log(fmt.Sprintf("Updating accept keywords for %s from existing entry", packageName))
 		escapedPkg := strings.ReplaceAll(packageName, "/", "\\/")
-		replaceCmd := execSudoCommand(ctx, sudoPassword,
+		replaceCmd := ExecSudoCommand(ctx, sudoPassword,
 			fmt.Sprintf("sed -i '/^%s /d' %s/danklinux; exit_code=$?; exit $exit_code", escapedPkg, acceptKeywordsDir))
 		if output, err := replaceCmd.CombinedOutput(); err != nil {
 			g.log(fmt.Sprintf("sed delete output: %s", string(output)))
@@ -678,7 +678,7 @@ func (g *GentooDistribution) setPackageAcceptKeywords(ctx context.Context, packa
 		}
 	}
 
-	appendCmd := execSudoCommand(ctx, sudoPassword,
+	appendCmd := ExecSudoCommand(ctx, sudoPassword,
 		fmt.Sprintf("bash -c \"echo '%s' >> %s/danklinux\"", keywordLine, acceptKeywordsDir))
 
 	output, err := appendCmd.CombinedOutput()
@@ -729,6 +729,6 @@ func (g *GentooDistribution) installGURUPackages(ctx context.Context, packages [
 		CommandInfo: fmt.Sprintf("sudo %s", strings.Join(args, " ")),
 	}
 
-	cmd := execSudoCommand(ctx, sudoPassword, fmt.Sprintf("%s || exit $?", strings.Join(args, " ")))
+	cmd := ExecSudoCommand(ctx, sudoPassword, fmt.Sprintf("%s || exit $?", strings.Join(args, " ")))
 	return g.runWithProgressTimeout(cmd, progressChan, PhaseAURPackages, 0.70, 0.85, 0)
 }

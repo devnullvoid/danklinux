@@ -69,6 +69,8 @@ type Manager struct {
 
 	stateMutex sync.RWMutex
 	state      *State
+
+	fatalError chan error
 }
 
 type headState struct {
@@ -137,6 +139,10 @@ func (m *Manager) notifySubscribers() {
 	case m.dirty <- struct{}{}:
 	default:
 	}
+}
+
+func (m *Manager) FatalError() <-chan error {
+	return m.fatalError
 }
 
 func stateChanged(old, new *State) bool {

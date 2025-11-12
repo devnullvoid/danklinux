@@ -1191,6 +1191,16 @@ func Start(printDocs bool) error {
 		log.Debugf("WlrOutput manager unavailable: %v", err)
 	}
 
+	fatalErrChan := make(chan error, 1)
+	if wlrOutputManager != nil {
+		go func() {
+			select {
+			case err := <-wlrOutputManager.FatalError():
+				fatalErrChan <- fmt.Errorf("WlrOutput fatal error: %w", err)
+			}
+		}()
+	}
+
 	go func() {
 		if err := InitializeBrightnessManager(); err != nil {
 			log.Warnf("Brightness manager unavailable: %v", err)
@@ -1207,11 +1217,23 @@ func Start(printDocs bool) error {
 	log.Info("")
 	log.Infof("Ready! Capabilities: %v", getCapabilities().Capabilities)
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			return err
+	listenerErrChan := make(chan error, 1)
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				listenerErrChan <- err
+				return
+			}
+			go handleConnection(conn)
 		}
-		go handleConnection(conn)
+	}()
+
+	select {
+	case err := <-listenerErrChan:
+		return err
+	case err := <-fatalErrChan:
+		return err
 	}
 }

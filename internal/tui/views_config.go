@@ -337,7 +337,8 @@ func (m Model) checkExistingConfigurations() tea.Cmd {
 				})
 			}
 		} else {
-			if m.selectedTerminal == 0 {
+			switch m.selectedTerminal {
+			case 0:
 				ghosttyPath := filepath.Join(os.Getenv("HOME"), ".config", "ghostty", "config")
 				ghosttyExists := false
 				if _, err := os.Stat(ghosttyPath); err == nil {
@@ -348,7 +349,7 @@ func (m Model) checkExistingConfigurations() tea.Cmd {
 					Path:       ghosttyPath,
 					Exists:     ghosttyExists,
 				})
-			} else if m.selectedTerminal == 1 {
+			case 1:
 				kittyPath := filepath.Join(os.Getenv("HOME"), ".config", "kitty", "kitty.conf")
 				kittyExists := false
 				if _, err := os.Stat(kittyPath); err == nil {
@@ -359,7 +360,7 @@ func (m Model) checkExistingConfigurations() tea.Cmd {
 					Path:       kittyPath,
 					Exists:     kittyExists,
 				})
-			} else {
+			default:
 				alacrittyPath := filepath.Join(os.Getenv("HOME"), ".config", "alacritty", "alacritty.toml")
 				alacrittyExists := false
 				if _, err := os.Stat(alacrittyPath); err == nil {

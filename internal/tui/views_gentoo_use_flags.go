@@ -1,18 +1,12 @@
 package tui
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/AvengeMedia/danklinux/internal/distros"
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-type gentooUseFlagsSetMsg struct {
-	err error
-}
 
 func (m Model) viewGentooUseFlags() string {
 	var b strings.Builder
@@ -81,25 +75,4 @@ func (m Model) updateGentooUseFlagsState(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, m.listenForLogs()
-}
-
-func (m Model) setGentooGlobalUseFlags() tea.Cmd {
-	return func() tea.Msg {
-		useFlagsStr := strings.Join(distros.GentooGlobalUseFlags, " ")
-
-		checkCmd := exec.CommandContext(context.Background(), "grep", "-q", "^USE=", "/etc/portage/make.conf")
-		hasUse := checkCmd.Run() == nil
-
-		var cmd *exec.Cmd
-		if hasUse {
-			cmd = distros.ExecSudoCommand(context.Background(), m.sudoPassword,
-				fmt.Sprintf("sed -i 's/^USE=\"\\(.*\\)\"/USE=\"\\1 %s\"/' /etc/portage/make.conf", useFlagsStr))
-		} else {
-			cmd = distros.ExecSudoCommand(context.Background(), m.sudoPassword,
-				fmt.Sprintf("bash -c \"echo 'USE=\\\"%s\\\"' >> /etc/portage/make.conf\"", useFlagsStr))
-		}
-
-		err := cmd.Run()
-		return gentooUseFlagsSetMsg{err: err}
-	}
 }

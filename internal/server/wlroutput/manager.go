@@ -18,6 +18,7 @@ func NewManager(display *wlclient.Display) (*Manager, error) {
 		stopChan:    make(chan struct{}),
 		subscribers: make(map[string]chan State),
 		dirty:       make(chan struct{}, 1),
+		fatalError:  make(chan error, 1),
 	}
 
 	m.wg.Add(1)
@@ -47,13 +48,37 @@ func (m *Manager) post(fn func()) {
 
 func (m *Manager) waylandActor() {
 	defer m.wg.Done()
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("waylandActor panic: %v", r)
+			log.Errorf("WlrOutput: %v", err)
+
+			select {
+			case m.fatalError <- err:
+			default:
+			}
+
+			select {
+			case <-m.stopChan:
+			default:
+				close(m.stopChan)
+			}
+		}
+	}()
 
 	for {
 		select {
 		case <-m.stopChan:
 			return
 		case c := <-m.cmdq:
-			c.fn()
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Errorf("WlrOutput: command execution panic: %v", r)
+					}
+				}()
+				c.fn()
+			}()
 		}
 	}
 }
@@ -379,6 +404,24 @@ func (m *Manager) updateState() {
 
 func (m *Manager) notifier() {
 	defer m.notifierWg.Done()
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("notifier panic: %v", r)
+			log.Errorf("WlrOutput: %v", err)
+
+			select {
+			case m.fatalError <- err:
+			default:
+			}
+
+			select {
+			case <-m.stopChan:
+			default:
+				close(m.stopChan)
+			}
+		}
+	}()
+
 	const minGap = 100 * time.Millisecond
 	timer := time.NewTimer(minGap)
 	timer.Stop()

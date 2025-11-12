@@ -288,7 +288,7 @@ func (f *FedoraDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 
 	args := []string{"dnf", "install", "-y"}
 	args = append(args, missingPkgs...)
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		f.logError("failed to install prerequisites", err)
@@ -455,7 +455,7 @@ func (f *FedoraDistribution) enableCOPRRepos(ctx context.Context, coprPkgs []Pac
 				CommandInfo: fmt.Sprintf("sudo dnf copr enable -y %s", pkg.RepoURL),
 			}
 
-			cmd := execSudoCommand(ctx, sudoPassword,
+			cmd := ExecSudoCommand(ctx, sudoPassword,
 				fmt.Sprintf("dnf copr enable -y %s 2>&1", pkg.RepoURL))
 			output, err := cmd.CombinedOutput()
 			if err != nil {
@@ -479,7 +479,7 @@ func (f *FedoraDistribution) enableCOPRRepos(ctx context.Context, coprPkgs []Pac
 					CommandInfo: fmt.Sprintf("echo \"priority=1\" | sudo tee -a %s", repoFile),
 				}
 
-				priorityCmd := execSudoCommand(ctx, sudoPassword,
+				priorityCmd := ExecSudoCommand(ctx, sudoPassword,
 					fmt.Sprintf("bash -c 'echo \"priority=1\" | tee -a %s' 2>&1", repoFile))
 				priorityOutput, err := priorityCmd.CombinedOutput()
 				if err != nil {
@@ -514,7 +514,7 @@ func (f *FedoraDistribution) installDNFPackages(ctx context.Context, packages []
 		CommandInfo: fmt.Sprintf("sudo %s", strings.Join(args, " ")),
 	}
 
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	return f.runWithProgress(cmd, progressChan, PhaseSystemPackages, 0.40, 0.60)
 }
 
@@ -545,6 +545,6 @@ func (f *FedoraDistribution) installCOPRPackages(ctx context.Context, packages [
 		CommandInfo: fmt.Sprintf("sudo %s", strings.Join(args, " ")),
 	}
 
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	return f.runWithProgress(cmd, progressChan, PhaseAURPackages, 0.70, 0.85)
 }

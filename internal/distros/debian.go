@@ -175,7 +175,7 @@ func (d *DebianDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 		LogOutput:  "Updating APT package lists",
 	}
 
-	updateCmd := execSudoCommand(ctx, sudoPassword, "apt-get update")
+	updateCmd := ExecSudoCommand(ctx, sudoPassword, "apt-get update")
 	if err := d.runWithProgress(updateCmd, progressChan, PhasePrerequisites, 0.06, 0.07); err != nil {
 		return fmt.Errorf("failed to update package lists: %w", err)
 	}
@@ -192,7 +192,7 @@ func (d *DebianDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 
 	checkCmd := exec.CommandContext(ctx, "dpkg", "-l", "build-essential")
 	if err := checkCmd.Run(); err != nil {
-		cmd := execSudoCommand(ctx, sudoPassword, "apt-get install -y build-essential")
+		cmd := ExecSudoCommand(ctx, sudoPassword, "apt-get install -y build-essential")
 		if err := d.runWithProgress(cmd, progressChan, PhasePrerequisites, 0.08, 0.09); err != nil {
 			return fmt.Errorf("failed to install build-essential: %w", err)
 		}
@@ -208,7 +208,7 @@ func (d *DebianDistribution) InstallPrerequisites(ctx context.Context, sudoPassw
 		LogOutput:   "Installing additional development tools",
 	}
 
-	devToolsCmd := execSudoCommand(ctx, sudoPassword,
+	devToolsCmd := ExecSudoCommand(ctx, sudoPassword,
 		"apt-get install -y curl wget git cmake ninja-build pkg-config libxcb-cursor-dev libglib2.0-dev libpolkit-agent-1-dev")
 	if err := d.runWithProgress(devToolsCmd, progressChan, PhasePrerequisites, 0.10, 0.12); err != nil {
 		return fmt.Errorf("failed to install development tools: %w", err)
@@ -344,7 +344,7 @@ func (d *DebianDistribution) installAPTPackages(ctx context.Context, packages []
 		CommandInfo: fmt.Sprintf("sudo %s", strings.Join(args, " ")),
 	}
 
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	return d.runWithProgress(cmd, progressChan, PhaseSystemPackages, 0.40, 0.60)
 }
 
@@ -424,7 +424,7 @@ func (d *DebianDistribution) installBuildDependencies(ctx context.Context, manua
 	args := []string{"apt-get", "install", "-y"}
 	args = append(args, depList...)
 
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	return d.runWithProgress(cmd, progressChan, PhaseSystemPackages, 0.80, 0.82)
 }
 
@@ -442,7 +442,7 @@ func (d *DebianDistribution) installRust(ctx context.Context, sudoPassword strin
 		CommandInfo: "sudo apt-get install rustup",
 	}
 
-	rustupInstallCmd := execSudoCommand(ctx, sudoPassword, "apt-get install -y rustup")
+	rustupInstallCmd := ExecSudoCommand(ctx, sudoPassword, "apt-get install -y rustup")
 	if err := d.runWithProgress(rustupInstallCmd, progressChan, PhaseSystemPackages, 0.82, 0.83); err != nil {
 		return fmt.Errorf("failed to install rustup: %w", err)
 	}
@@ -481,7 +481,7 @@ func (d *DebianDistribution) installGo(ctx context.Context, sudoPassword string,
 		CommandInfo: "sudo apt-get install golang-go",
 	}
 
-	installCmd := execSudoCommand(ctx, sudoPassword, "apt-get install -y golang-go")
+	installCmd := ExecSudoCommand(ctx, sudoPassword, "apt-get install -y golang-go")
 	return d.runWithProgress(installCmd, progressChan, PhaseSystemPackages, 0.87, 0.90)
 }
 
@@ -498,7 +498,7 @@ func (d *DebianDistribution) installGhosttyDebian(ctx context.Context, sudoPassw
 		LogOutput:   "Installing Ghostty using pre-built Debian package",
 	}
 
-	installCmd := execSudoCommand(ctx, sudoPassword,
+	installCmd := ExecSudoCommand(ctx, sudoPassword,
 		"/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)\"")
 
 	if err := d.runWithProgress(installCmd, progressChan, PhaseSystemPackages, 0.1, 0.9); err != nil {

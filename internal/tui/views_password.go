@@ -265,15 +265,6 @@ func checkFingerprintEnabled() bool {
 	return strings.Contains(string(output), "finger")
 }
 
-func checkSudoCached() bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, "sudo", "-n", "true")
-	err := cmd.Run()
-	return err == nil
-}
-
 func (m Model) delayThenReturn() tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(2 * time.Second)

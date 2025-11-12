@@ -74,15 +74,6 @@ func ExecSudoCommand(ctx context.Context, sudoPassword string, command string) *
 	return exec.CommandContext(ctx, "bash", "-c", cmdStr)
 }
 
-// Keep unexported versions for backward compatibility within package
-func makeSudoCommand(sudoPassword string, command string) string {
-	return MakeSudoCommand(sudoPassword, command)
-}
-
-func execSudoCommand(ctx context.Context, sudoPassword string, command string) *exec.Cmd {
-	return ExecSudoCommand(ctx, sudoPassword, command)
-}
-
 // Common dependency detection methods
 func (b *BaseDistribution) detectGit() deps.Dependency {
 	status := deps.StatusMissing
@@ -657,7 +648,7 @@ func (b *BaseDistribution) installDMSBinary(ctx context.Context, sudoPassword st
 	}
 
 	// Install to /usr/local/bin
-	installCmd := execSudoCommand(ctx, sudoPassword,
+	installCmd := ExecSudoCommand(ctx, sudoPassword,
 		fmt.Sprintf("cp %s /usr/local/bin/dms", binaryPath))
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("failed to install DMS binary: %w", err)

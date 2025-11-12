@@ -268,7 +268,7 @@ func (o *OpenSUSEDistribution) InstallPrerequisites(ctx context.Context, sudoPas
 
 	args := []string{"zypper", "install", "-y"}
 	args = append(args, missingPkgs...)
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		o.logError("failed to install prerequisites", err)
@@ -399,7 +399,7 @@ func (o *OpenSUSEDistribution) installZypperPackages(ctx context.Context, packag
 		CommandInfo: fmt.Sprintf("sudo %s", strings.Join(args, " ")),
 	}
 
-	cmd := execSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
+	cmd := ExecSudoCommand(ctx, sudoPassword, strings.Join(args, " "))
 	return o.runWithProgress(cmd, progressChan, PhaseSystemPackages, 0.40, 0.60)
 }
 
@@ -521,7 +521,7 @@ func (o *OpenSUSEDistribution) installQuickshell(ctx context.Context, sudoPasswo
 		CommandInfo: "sudo cmake --install build",
 	}
 
-	installCmd := execSudoCommand(ctx, sudoPassword,
+	installCmd := ExecSudoCommand(ctx, sudoPassword,
 		fmt.Sprintf("cd %s && cmake --install build", tmpDir))
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("failed to install quickshell: %w", err)
@@ -545,7 +545,7 @@ func (o *OpenSUSEDistribution) installRust(ctx context.Context, sudoPassword str
 		CommandInfo: "sudo zypper install rustup",
 	}
 
-	rustupInstallCmd := execSudoCommand(ctx, sudoPassword, "zypper install -y rustup")
+	rustupInstallCmd := ExecSudoCommand(ctx, sudoPassword, "zypper install -y rustup")
 	if err := o.runWithProgress(rustupInstallCmd, progressChan, PhaseSystemPackages, 0.82, 0.83); err != nil {
 		return fmt.Errorf("failed to install rustup: %w", err)
 	}
