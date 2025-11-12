@@ -28,8 +28,6 @@ var rootCmd = &cobra.Command{
 func init() {
 	// Add the -c flag
 	rootCmd.PersistentFlags().StringVarP(&customConfigPath, "config", "c", "", "Specify a custom path to the DMS config directory")
-
-	rootCmd.PersistentPreRunE = findConfig
 }
 
 func findConfig(cmd *cobra.Command, args []string) error {

@@ -17,9 +17,10 @@ var versionCmd = &cobra.Command{
 }
 
 var runCmd = &cobra.Command{
-	Use:   "run",
-	Short: "Launch quickshell with DMS configuration",
-	Long:  "Launch quickshell with DMS configuration (qs -c dms)",
+	Use:     "run",
+	Short:   "Launch quickshell with DMS configuration",
+	Long:    "Launch quickshell with DMS configuration (qs -c dms)",
+	PreRunE: findConfig,
 	Run: func(cmd *cobra.Command, args []string) {
 		daemon, _ := cmd.Flags().GetBool("daemon")
 		session, _ := cmd.Flags().GetBool("session")
@@ -32,18 +33,20 @@ var runCmd = &cobra.Command{
 }
 
 var restartCmd = &cobra.Command{
-	Use:   "restart",
-	Short: "Restart quickshell with DMS configuration",
-	Long:  "Kill existing DMS shell processes and restart quickshell with DMS configuration",
+	Use:     "restart",
+	Short:   "Restart quickshell with DMS configuration",
+	Long:    "Kill existing DMS shell processes and restart quickshell with DMS configuration",
+	PreRunE: findConfig,
 	Run: func(cmd *cobra.Command, args []string) {
 		restartShell()
 	},
 }
 
 var restartDetachedCmd = &cobra.Command{
-	Use:    "restart-detached <pid>",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:     "restart-detached <pid>",
+	Hidden:  true,
+	Args:    cobra.ExactArgs(1),
+	PreRunE: findConfig,
 	Run: func(cmd *cobra.Command, args []string) {
 		runDetachedRestart(args[0])
 	},
@@ -59,9 +62,10 @@ var killCmd = &cobra.Command{
 }
 
 var ipcCmd = &cobra.Command{
-	Use:   "ipc",
-	Short: "Send IPC commands to running DMS shell",
-	Long:  "Send IPC commands to running DMS shell (qs -c dms ipc <args>)",
+	Use:     "ipc",
+	Short:   "Send IPC commands to running DMS shell",
+	Long:    "Send IPC commands to running DMS shell (qs -c dms ipc <args>)",
+	PreRunE: findConfig,
 	Run: func(cmd *cobra.Command, args []string) {
 		runShellIPCCommand(args)
 	},

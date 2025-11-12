@@ -20,9 +20,10 @@ import (
 )
 
 var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Update DankMaterialShell to the latest version",
-	Long:  "Update DankMaterialShell to the latest version using the appropriate package manager for your distribution",
+	Use:     "update",
+	Short:   "Update DankMaterialShell to the latest version",
+	Long:    "Update DankMaterialShell to the latest version using the appropriate package manager for your distribution",
+	PreRunE: findConfig,
 	Run: func(cmd *cobra.Command, args []string) {
 		runUpdate()
 	},
