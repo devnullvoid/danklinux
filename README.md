@@ -1,3 +1,12 @@
+# THIS REPOSITORY HAS BEEN DEPRECATED
+
+It will become PRIVATE after the NEXT release of DMS.
+
+Move all discussions to https://github.com/AvengeMedia/DankMaterialShell - all code and relevant files have migrated there.
+
+---
+
+
 <div align="center">
   <a href="https://danklinux.com">
     <img src="assets/danklogo.svg" alt="Dank Linux" width="200">
